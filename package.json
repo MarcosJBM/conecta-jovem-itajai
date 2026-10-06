@@ -1,0 +1,25 @@
+{
+  "name": "conecta-jovem-itajai",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@12.8.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm db:generate && pnpm --filter @conecta/database build && turbo dev",
+    "build": "turbo build",
+    "typecheck": "turbo typecheck",
+    "db:up": "node scripts/docker.mjs compose up -d postgres",
+    "db:down": "node scripts/docker.mjs compose down",
+    "db:reset": "node scripts/docker.mjs compose down --volumes",
+    "db:logs": "node scripts/docker.mjs compose logs -f postgres",
+    "db:status": "node scripts/docker.mjs compose ps",
+    "db:generate": "pnpm --filter @conecta/database db:generate",
+    "db:validate": "pnpm --filter @conecta/database db:validate"
+  },
+  "devDependencies": {
+    "turbo": "2.11.7",
+    "typescript": "5.9.3"
+  }
+}
