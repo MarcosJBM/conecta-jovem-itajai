@@ -91,6 +91,27 @@ PostgreSQL estão se comunicando.
 | `pnpm db:generate` | Gera o Prisma Client                                  |
 | `pnpm db:validate` | Valida o schema do Prisma                             |
 
+## Padrão de commits
+
+As mensagens de commit seguem o padrão
+[Conventional Commits](https://www.conventionalcommits.org/):
+
+```text
+tipo(escopo opcional): descrição curta
+```
+
+Exemplos:
+
+```text
+feat(web): adiciona formulário de inscrição
+fix(api): corrige validação de e-mail
+docs: atualiza instruções de instalação
+```
+
+Os tipos mais comuns são `feat`, `fix`, `docs`, `refactor`, `test`, `chore`,
+`build` e `ci`. O hook `commit-msg` valida o padrão automaticamente. Ele é
+configurado pelo Husky ao executar `pnpm install`.
+
 ## Variáveis de ambiente
 
 O arquivo `.env.example` documenta todas as variáveis necessárias. O arquivo
