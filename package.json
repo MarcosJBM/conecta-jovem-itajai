@@ -17,7 +17,10 @@
     "db:logs": "node scripts/docker.mjs compose logs -f postgres",
     "db:status": "node scripts/docker.mjs compose ps",
     "db:generate": "pnpm --filter @conecta/database db:generate",
-    "db:validate": "pnpm --filter @conecta/database db:validate"
+    "db:migrate": "pnpm --filter @conecta/database db:migrate:dev",
+    "db:migrate:deploy": "pnpm --filter @conecta/database db:migrate:deploy",
+    "db:validate": "pnpm --filter @conecta/database db:validate",
+    "db:test": "pnpm --filter @conecta/database test:integration"
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.3",
