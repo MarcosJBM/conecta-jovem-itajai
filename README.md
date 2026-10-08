@@ -59,7 +59,13 @@ Monorepo da plataforma Conecta Jovem Itajaí, organizado com Turborepo e PNPM.
    pnpm db:generate
    ```
 
-5. Inicie frontend e backend:
+5. Aplique as migrations locais:
+
+   ```bash
+   pnpm db:migrate
+   ```
+
+6. Inicie frontend e backend:
 
    ```bash
    pnpm dev
@@ -80,16 +86,19 @@ PostgreSQL estão se comunicando.
 
 ## Comandos
 
-| Comando            | Descrição                                             |
-| ------------------ | ----------------------------------------------------- |
-| `pnpm dev`         | Executa frontend e backend em modo de desenvolvimento |
-| `pnpm build`       | Compila todos os workspaces                           |
-| `pnpm typecheck`   | Verifica os tipos TypeScript                          |
-| `pnpm db:up`       | Inicia o PostgreSQL                                   |
-| `pnpm db:down`     | Encerra o PostgreSQL                                  |
-| `pnpm db:reset`    | Encerra o PostgreSQL e remove os dados locais         |
-| `pnpm db:generate` | Gera o Prisma Client                                  |
-| `pnpm db:validate` | Valida o schema do Prisma                             |
+| Comando                  | Descrição                                               |
+| ------------------------ | ------------------------------------------------------- |
+| `pnpm dev`               | Executa frontend e backend em modo de desenvolvimento   |
+| `pnpm build`             | Compila todos os workspaces                             |
+| `pnpm typecheck`         | Verifica os tipos TypeScript                            |
+| `pnpm db:up`             | Inicia o PostgreSQL                                     |
+| `pnpm db:down`           | Encerra o PostgreSQL                                    |
+| `pnpm db:reset`          | Encerra o PostgreSQL e remove os dados locais           |
+| `pnpm db:generate`       | Gera o Prisma Client                                    |
+| `pnpm db:migrate`        | Cria e aplica migrations no ambiente de desenvolvimento |
+| `pnpm db:migrate:deploy` | Aplica migrations versionadas em outros ambientes       |
+| `pnpm db:validate`       | Valida o schema do Prisma                               |
+| `pnpm db:test`           | Valida a persistência dos perfis no PostgreSQL          |
 
 ## Padrão de commits
 
