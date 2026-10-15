@@ -146,3 +146,81 @@ Para também apagar os dados locais do PostgreSQL:
 ```bash
 pnpm db:reset
 ```
+
+## Cadastro de empresa
+
+O formulário inicial do frontend cria a conta da empresa e sua solicitação de validação em um único envio para `POST /companies`. Não exige login anterior nem conta separada de representante. O backend define o perfil `COMPANY` e o estado inicial `PENDING`.
+
+Campos obrigatórios: `email`, `password`, `cnpj`, `legalName` (razão social), `city`, `state` (UF), `contactName`, `contactRole` e `phone`. `tradeName` (nome fantasia) é opcional. A senha exige pelo menos 8 caracteres e até 72 bytes UTF-8, limite do BCrypt. Telefone contém DDD e 10 ou 11 dígitos. E-mail é normalizado para minúsculas; CNPJ, para maiúsculas sem máscara. E-mail e CNPJ são únicos.
+
+O cálculo dos dígitos verificadores aceita CNPJ numérico e alfanumérico conforme o [manual da Receita Federal](https://www.gov.br/receitafederal/pt-br/centrais-de-conteudo/publicacoes/documentos-tecnicos/cnpj/manual-dv-cnpj.pdf). Essa validação detecta erros de formato; a consulta cadastral será feita manualmente pelo ADMIN no site da Receita.
+
+Exemplo de requisição (dados fictícios):
+
+```json
+{
+  "email": "empresa@example.com",
+  "password": "senha-de-exemplo",
+  "cnpj": "12.ABC.345/01DE-35",
+  "legalName": "Empresa de Exemplo",
+  "city": "Itajaí",
+  "state": "SC",
+  "contactName": "Responsável de exemplo",
+  "contactRole": "RH",
+  "phone": "47999991234"
+}
+```
+
+Resposta `201`: `{ "company": { "id": "...", "userId": "...", "validation": { "id": "...", "status": "PENDING" } }, "message": "..." }`.
+Erros de entrada retornam `400` e `fields`; duplicidade retorna `409` com o campo em conflito; erros inesperados retornam `500`. Senha e hash não são retornados. Conta, perfil e solicitação são criados atomicamente.
+
+### Arquitetura do cadastro
+
+```text
+HTTP controller + Zod
+→ factory
+→ RegisterCompanyUseCase
+→ CompaniesRepository
+→ PrismaCompaniesRepository
+→ PostgreSQL
+```
+
+O caso de uso recebe repositório e hasher por construtor. O adaptador Prisma faz a escrita aninhada atômica e traduz conflitos de unicidade, inclusive em requisições concorrentes. Há repositório em memória para testes. Erros HTTP são tratados no middleware centralizado; os endpoints de saúde existentes foram preservados.
+
+A migration `20261015000000_company_registration` adiciona os dados empresariais e a tabela de validações. As colunas novas do perfil aceitam nulo para preservar perfis antigos, criados antes desta funcionalidade; todo novo cadastro pela API exige os campos definidos. O banco exige motivo não vazio quando o estado é `REJECTED`.
+
+Para usar no ambiente local já configurado:
+
+```bash
+pnpm db:migrate:deploy
+pnpm dev
+```
+
+O Vite encaminha `/api/companies` para `/companies` na porta `API_PORT` do arquivo `.env` (3333 por padrão). Em publicação, o servidor web deverá encaminhar `/api/*` à API removendo o prefixo `/api`.
+
+### Verificações
+
+```bash
+pnpm --filter @conecta/api test
+pnpm --filter @conecta/api typecheck
+pnpm --filter @conecta/web typecheck
+pnpm --filter @conecta/api build
+pnpm --filter @conecta/web build
+```
+
+O teste HTTP em memória cobre obrigatórios, CNPJ numérico/alfanumérico, conflitos, normalização, senha BCrypt e status pendente. O teste E2E usa HTTP, Prisma e um PostgreSQL separado; não utilize o banco de desenvolvimento. O nome do banco de teste deve terminar em `_test`.
+
+```bash
+# Configure uma conexão exclusiva para testes antes destes comandos.
+export TEST_DATABASE_URL='postgresql://USER:PASSWORD@localhost:PORT/conecta_registration_test'
+DATABASE_URL="$TEST_DATABASE_URL" pnpm --filter @conecta/database db:migrate:deploy
+pnpm --filter @conecta/api test:e2e
+```
+
+O E2E verifica concorrência, rollback de criação, hash persistido, solicitação pendente, motivo obrigatório na rejeição e exclusão em cascata. Remove os próprios registros ao terminar.
+
+### Próximas etapas acordadas
+
+A listagem e os detalhes para o ADMIN, a consulta manual e as ações de aprovar/rejeitar serão implementadas em etapa própria. Os estados persistidos são `PENDING`, `APPROVED` e `REJECTED`, com campos para responsável e data da análise e motivo de rejeição. A restrição de perfil ADMIN será aplicada no futuro caso de uso de análise.
+
+Não há upload de documentos ou consulta automática de CNPJ. Exibição do resultado e motivo para a empresa, correção e reenvio com a mesma conta ficam para depois, assim como a definição das permissões da empresa pendente.
