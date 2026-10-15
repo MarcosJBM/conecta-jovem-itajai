@@ -3,7 +3,7 @@ import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 import { app } from '../../../app.js';
 import { getDatabaseClient } from '../../../libs/prisma.js';
-import { userInput } from '../../../utils/test/user-fixture.js';
+import { testCpf, userInput } from '../../../utils/test/user-fixture.js';
 describe('Users HTTP → Prisma → isolated PostgreSQL', () => {
   it.each(['YOUTH', 'COMPANY'])(
     'creates a %s profile without exposing credentials',
@@ -23,6 +23,63 @@ describe('Users HTTP → Prisma → isolated PostgreSQL', () => {
       expect(user.companyProfile !== null).toBe(role === 'COMPANY');
     },
   );
+  it('persists complete normalized youth data with a six-character password', async () => {
+    const response = await request(app)
+      .post('/users')
+      .send({ ...userInput, password: 'abcdef' });
+    expect(response.status).toBe(201);
+    const stored = await getDatabaseClient().user.findUniqueOrThrow({
+      where: { id: response.body.user.id },
+      include: { youthProfile: true },
+    });
+    expect(stored.youthProfile).toMatchObject({
+      firstName: 'Ana',
+      lastName: 'Silva',
+      cpf: '52998224725',
+      phone: '47999991234',
+      postalCode: '88301000',
+      street: 'Rua Central',
+      number: '123',
+      complement: 'Casa',
+      neighborhood: 'Centro',
+      city: 'Itajaí',
+      state: 'SC',
+      birthDate: new Date('2005-03-12T00:00:00Z'),
+    });
+    expect(response.body.user.youthProfile).not.toHaveProperty('cpf');
+    expect(response.body.user.youthProfile).not.toHaveProperty('street');
+  });
+  it('enforces CPF uniqueness under concurrent requests with different emails', async () => {
+    const responses = await Promise.all(
+      ['one@example.com', 'two@example.com'].map((email) =>
+        request(app)
+          .post('/users')
+          .send({ ...userInput, email }),
+      ),
+    );
+    expect(responses.map((response) => response.status).sort()).toEqual([
+      201, 409,
+    ]);
+    expect(
+      responses.find((response) => response.status === 409)?.body.message,
+    ).toBe('CPF já cadastrado.');
+    expect(await getDatabaseClient().user.count()).toBe(1);
+    expect(await getDatabaseClient().youthProfile.count()).toBe(1);
+  });
+  it.each([
+    { acceptedTerms: false },
+    { acceptedTerms: undefined },
+    { youthProfile: undefined },
+    { youthProfile: { ...userInput.youthProfile, cpf: '11111111111' } },
+    { youthProfile: { ...userInput.youthProfile, complement: '' } },
+  ])('rejects invalid youth input atomically %j', async (change) => {
+    const response = await request(app)
+      .post('/users')
+      .send({ ...userInput, ...change });
+    expect(response.status).toBe(400);
+    expect(await getDatabaseClient().user.count()).toBe(0);
+    expect(await getDatabaseClient().youthProfile.count()).toBe(0);
+  });
   it('gets, lists, patches, replaces and deletes a user, cascading the profile', async () => {
     const created = await request(app).post('/users').send(userInput);
     const id = created.body.user.id;
@@ -69,7 +126,11 @@ describe('Users HTTP → Prisma → isolated PostgreSQL', () => {
     for (let i = 0; i < 3; i++)
       await request(app)
         .post('/users')
-        .send({ ...userInput, email: `user${i}@example.com` });
+        .send({
+          ...userInput,
+          youthProfile: { ...userInput.youthProfile, cpf: testCpf(i) },
+          email: `user${i}@example.com`,
+        });
     const first = await request(app).get('/users?pageSize=2');
     const second = await request(app).get('/users?pageSize=2&page=2');
     expect(first.body.total).toBe(3);
@@ -105,7 +166,11 @@ describe('Users HTTP → Prisma → isolated PostgreSQL', () => {
     ).toBe(409);
     const other = await request(app)
       .post('/users')
-      .send({ ...userInput, email: 'other@example.com' });
+      .send({
+        ...userInput,
+        youthProfile: { ...userInput.youthProfile, cpf: testCpf(100) },
+        email: 'other@example.com',
+      });
     expect(
       (
         await request(app)

@@ -10,6 +10,7 @@ export default defineConfig({
       'src/libs/**/*.spec.ts',
       'src/http/errors/**/*.spec.ts',
       'src/env.spec.ts',
+      'src/http/controllers/**/schemas.spec.ts',
     ],
   },
 });

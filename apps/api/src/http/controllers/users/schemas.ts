@@ -1,14 +1,49 @@
 import { z } from 'zod';
-import { userRoles } from '../../../domain/enums/user-role.js';
 export const idSchema = z.object({ id: z.uuid() });
 const fields = {
-  email: z.email().max(254),
-  password: z.string().min(8).max(128),
+  email: z.string().trim().toLowerCase().pipe(z.email().max(254)),
+  password: z.string().min(6),
 };
-export const createSchema = z.strictObject({
-  ...fields,
-  role: z.enum(userRoles),
+const requiredText = z.string().trim().min(1, 'Campo obrigatório.');
+const youthSchema = z.strictObject({
+  firstName: requiredText,
+  lastName: requiredText,
+  birthDate: requiredText,
+  phone: requiredText,
+  cpf: requiredText,
+  postalCode: requiredText,
+  street: requiredText,
+  number: requiredText,
+  complement: requiredText,
+  neighborhood: requiredText,
+  city: requiredText,
+  state: requiredText,
 });
+export const createSchema = z.discriminatedUnion('role', [
+  z.strictObject({
+    ...fields,
+    role: z.literal('YOUTH'),
+    youthProfile: z.preprocess(
+      (value) => (value === undefined ? {} : value),
+      youthSchema,
+    ),
+    acceptedTerms: z.literal(true, {
+      error: 'O aceite dos termos é obrigatório.',
+    }),
+  }),
+  z.strictObject({
+    ...fields,
+    role: z.literal('COMPANY'),
+    youthProfile: youthSchema.optional(),
+    acceptedTerms: z.boolean().optional(),
+  }),
+  z.strictObject({
+    ...fields,
+    role: z.literal('ADMIN'),
+    youthProfile: youthSchema.optional(),
+    acceptedTerms: z.boolean().optional(),
+  }),
+]);
 export const replaceSchema = z.strictObject(fields);
 export const updateSchema = replaceSchema
   .partial()

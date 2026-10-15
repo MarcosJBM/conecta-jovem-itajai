@@ -25,8 +25,12 @@ export class PrismaUsersRepository implements UsersRepository {
     try {
       return await this.prisma.user.create({
         data: {
-          ...data,
-          ...(data.role === 'YOUTH' ? { youthProfile: { create: {} } } : {}),
+          email: data.email,
+          passwordHash: data.passwordHash,
+          role: data.role,
+          ...(data.role === 'YOUTH'
+            ? { youthProfile: { create: data.youthProfile! } }
+            : {}),
           ...(data.role === 'COMPANY'
             ? { companyProfile: { create: {} } }
             : {}),
@@ -34,7 +38,18 @@ export class PrismaUsersRepository implements UsersRepository {
         include,
       });
     } catch (error) {
-      if (hasCode(error, 'P2002')) throw new ConflictError();
+      if (hasCode(error, 'P2002')) {
+        // Prisma's PostgreSQL adapter can report the constraint without meta.target.
+        // The failed nested write has rolled back before these lookups run.
+        if (
+          data.youthProfile &&
+          !(await this.findByEmail(data.email)) &&
+          (await this.findByCpf(data.youthProfile.cpf))
+        ) {
+          throw new ConflictError('CPF já cadastrado.');
+        }
+        throw new ConflictError();
+      }
 
       throw error;
     }
@@ -42,6 +57,13 @@ export class PrismaUsersRepository implements UsersRepository {
 
   async findById(id: string) {
     return this.prisma.user.findUnique({ where: { id }, include });
+  }
+
+  async findByCpf(cpf: string) {
+    return this.prisma.user.findFirst({
+      where: { youthProfile: { cpf } },
+      include,
+    });
   }
 
   async findByEmail(email: string) {

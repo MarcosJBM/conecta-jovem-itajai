@@ -16,6 +16,13 @@ export class InMemoryUsersRepository implements UsersRepository {
       throw new ConflictError();
     }
 
+    if (
+      data.youthProfile &&
+      this.users.some(
+        (user) => user.youthProfile?.cpf === data.youthProfile?.cpf,
+      )
+    )
+      throw new ConflictError('CPF já cadastrado.');
     const id = randomUUID();
     const now = new Date();
 
@@ -31,7 +38,8 @@ export class InMemoryUsersRepository implements UsersRepository {
       id,
       createdAt: now,
       updatedAt: now,
-      youthProfile: data.role === 'YOUTH' ? profile : null,
+      youthProfile:
+        data.role === 'YOUTH' ? { ...profile, ...data.youthProfile! } : null,
       companyProfile: data.role === 'COMPANY' ? profile : null,
     };
 
@@ -42,6 +50,12 @@ export class InMemoryUsersRepository implements UsersRepository {
 
   async findById(id: string) {
     return structuredClone(this.users.find((user) => user.id === id) ?? null);
+  }
+
+  async findByCpf(cpf: string) {
+    return structuredClone(
+      this.users.find((user) => user.youthProfile?.cpf === cpf) ?? null,
+    );
   }
 
   async findByEmail(email: string) {

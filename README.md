@@ -208,8 +208,7 @@ Falhas desconhecidas chegam ao handler global, são registradas e retornam
 uma mensagem genérica com status 500.
 
 `User` é o agregado: `YouthProfile` e `CompanyProfile` dependem de sua
-identidade, são criados junto com o usuário e removidos em cascata. Seus
-campos atuais são apenas identidade e timestamps; por isso não há CRUD
+identidade, são criados junto com o usuário e removidos em cascata. O perfil do jovem contém também os dados pessoais e de endereço; não há CRUD
 independente de perfis. A criação Prisma usa uma escrita aninhada atômica.
 Novos agregados devem ter contratos e implementações próprios.
 
@@ -227,17 +226,55 @@ Novos agregados devem ter contratos e implementações próprios.
 Exemplo de cadastro:
 
 ```json
-{ "email": "jovem@example.com", "password": "senha-local-123", "role": "YOUTH" }
+{
+  "email": "jovem@example.com",
+  "password": "abcdef",
+  "role": "YOUTH",
+  "acceptedTerms": true,
+  "youthProfile": {
+    "firstName": "Ana",
+    "lastName": "Silva",
+    "birthDate": "2005-03-12",
+    "phone": "(47) 99999-1234",
+    "cpf": "529.982.247-25",
+    "postalCode": "88301-000",
+    "street": "Rua Central",
+    "number": "123",
+    "complement": "Casa",
+    "neighborhood": "Centro",
+    "city": "Itajaí",
+    "state": "SC"
+  }
+}
 ```
 
 Cadastro aceita `YOUTH` e `COMPANY`; criação pública de `ADMIN` retorna 403.
 Email é normalizado para minúsculas e precisa ser único. A senha deve ter
-entre 8 e 128 caracteres e é armazenada com scrypt e salt aleatório, por um
+no mínimo 6 caracteres e é armazenada com scrypt e salt aleatório, por um
 adaptador injetado. Nenhuma resposta inclui senha ou hash. O papel é imutável
 nas atualizações; campos desconhecidos são rejeitados. PUT exige email e
 senha; PATCH exige ao menos um dos dois. UUID inválido ou entrada inválida
 retorna 400; recurso ausente, 404; duplicidade, 409. O handler também está
 preparado para erros de domínio 401 e 403.
+
+Para `YOUTH`, todos os campos de `youthProfile` são obrigatórios, inclusive
+complemento, e `acceptedTerms` deve ser `true`. O aceite é validado, sem
+persistência de versão ou data. CPF é validado pelos dígitos verificadores e
+armazenado sem máscara, com unicidade no banco. CPF duplicado retorna 409
+com `CPF já cadastrado.`; e-mail duplicado retorna `E-mail já cadastrado.`.
+CEP e celular são normalizados para números; celular brasileiro aceita DDD
+e prefixo opcional +55. UF é validada e normalizada para maiúsculas.
+A data usa `YYYY-MM-DD`, deve existir no calendário e não pode ser futura;
+não há restrição de faixa etária. Campos ausentes retornam 400 com os caminhos
+em `issues`; demais dados inválidos retornam 400 com mensagem explicativa.
+O cadastro cria usuário e perfil atomicamente, sem etapa de aprovação para
+jovens. Não realiza login nem envia e-mail de confirmação.
+
+As respostas públicas preservam apenas identidade e timestamps do perfil,
+sem expor seus dados pessoais e de endereço. A migration adiciona campos
+anuláveis para preservar perfis anteriores; novos cadastros pela API exigem
+todos os dados. Não há preenchimento fictício nem alteração dos dados legados.
+O fluxo de aprovação de empresas será implementado separadamente.
 
 Paginação aceita página inteira positiva e `pageSize` de 1 a 100 (padrão 20).
 A ordenação é explícita por `createdAt ASC, id ASC`; consultas de registros

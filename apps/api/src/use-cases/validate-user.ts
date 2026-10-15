@@ -12,8 +12,8 @@ export function normalizeEmail(email: string) {
 }
 
 export function validatePassword(password: string) {
-  if (password.length < 8 || password.length > 128)
-    throw new ValidationError('A senha deve possuir entre 8 e 128 caracteres.');
+  if (password.length < 6)
+    throw new ValidationError('A senha deve possuir no mínimo 6 caracteres.');
 }
 
 export function validateRegistrationRole(role: UserRole) {

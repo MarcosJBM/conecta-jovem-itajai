@@ -9,7 +9,7 @@ import { ConflictError } from './errors/conflict-error.js';
 import { ForbiddenError } from './errors/forbidden-error.js';
 import { ValidationError } from './errors/validation-error.js';
 import { ResourceNotFoundError } from './errors/resource-not-found.js';
-import { userInput, fakeHasher } from '../utils/test/user-fixture.js';
+import { testCpf, userInput, fakeHasher } from '../utils/test/user-fixture.js';
 
 let repository: InMemoryUsersRepository;
 let create: CreateUserUseCase;
@@ -50,7 +50,6 @@ describe('Create user', () => {
   it.each([
     { email: 'bad' },
     { password: 'short' },
-    { password: 'a'.repeat(129) },
     { role: 'INVALID' as 'YOUTH' },
   ])('validates before persistence: %j', async (changes) => {
     await expect(
@@ -89,7 +88,11 @@ describe('Get user', () => {
 describe('Fetch users', () => {
   it('returns stable pages, metadata and no password hashes', async () => {
     for (let i = 0; i < 5; i++)
-      await create.execute({ ...userInput, email: `user${i}@example.com` });
+      await create.execute({
+        ...userInput,
+        youthProfile: { ...userInput.youthProfile, cpf: testCpf(i) },
+        email: `user${i}@example.com`,
+      });
     const useCase = new FetchUsersUseCase(repository);
     const first = await useCase.execute({ page: 1, pageSize: 2 });
     const second = await useCase.execute({ page: 2, pageSize: 2 });
@@ -135,7 +138,7 @@ describe('Update user', () => {
       email: 'new@example.com',
       passwordHash: 'hashed:new-password',
       role: 'YOUTH',
-      youthProfile: user.youthProfile,
+      youthProfile: expect.objectContaining(user.youthProfile!),
     });
 
     expect(result.user).not.toHaveProperty('passwordHash');
@@ -153,7 +156,11 @@ describe('Update user', () => {
   it('rejects duplicate emails without modifying storage', async () => {
     const { user } = await create.execute(userInput);
 
-    await create.execute({ ...userInput, email: 'other@example.com' });
+    await create.execute({
+      ...userInput,
+      youthProfile: { ...userInput.youthProfile, cpf: testCpf(100) },
+      email: 'other@example.com',
+    });
 
     await expect(
       new UpdateUserUseCase(repository, fakeHasher).execute({
@@ -280,5 +287,86 @@ describe('Persistence boundaries', () => {
     await expect(
       new DeleteUserUseCase(repository).execute({ id: user.id }),
     ).rejects.toBeInstanceOf(ResourceNotFoundError);
+  });
+});
+
+describe('Youth registration', () => {
+  it('accepts six characters and persists normalized personal data privately', async () => {
+    const { user } = await create.execute({ ...userInput, password: 'abcdef' });
+    const stored = await repository.findById(user.id);
+    expect(stored?.youthProfile).toMatchObject({
+      firstName: 'Ana',
+      cpf: '52998224725',
+      phone: '47999991234',
+      postalCode: '88301000',
+      birthDate: new Date('2005-03-12T00:00:00Z'),
+      complement: 'Casa',
+    });
+    expect(stored?.passwordHash).toBe('hashed:abcdef');
+    expect(user.youthProfile).not.toHaveProperty('cpf');
+    expect(user.youthProfile).not.toHaveProperty('street');
+    expect(user.youthProfile).not.toHaveProperty('phone');
+  });
+
+  it.each([false, undefined])(
+    'requires terms acceptance: %s',
+    async (acceptedTerms) => {
+      await expect(
+        create.execute({ ...userInput, acceptedTerms }),
+      ).rejects.toBeInstanceOf(ValidationError);
+      expect((await repository.findMany({ page: 1, pageSize: 20 })).total).toBe(
+        0,
+      );
+    },
+  );
+
+  it.each(Object.keys(userInput.youthProfile))(
+    'requires nonblank %s',
+    async (field) => {
+      await expect(
+        create.execute({
+          ...userInput,
+          youthProfile: { ...userInput.youthProfile, [field]: '   ' },
+        }),
+      ).rejects.toBeInstanceOf(ValidationError);
+      expect((await repository.findMany({ page: 1, pageSize: 20 })).total).toBe(
+        0,
+      );
+    },
+  );
+
+  it.each([
+    { cpf: '111.111.111-11' },
+    { cpf: '52998224724' },
+    { cpf: 'abc52998224725' },
+    { birthDate: '2005-02-30' },
+    { birthDate: '2999-01-01' },
+    { phone: '123' },
+    { postalCode: '8830' },
+    { state: 'XX' },
+  ])('rejects invalid personal data %j', async (changes) => {
+    await expect(
+      create.execute({
+        ...userInput,
+        youthProfile: { ...userInput.youthProfile, ...changes },
+      }),
+    ).rejects.toBeInstanceOf(ValidationError);
+    expect((await repository.findMany({ page: 1, pageSize: 20 })).total).toBe(
+      0,
+    );
+  });
+
+  it('rejects the same CPF with different formatting and email', async () => {
+    await create.execute(userInput);
+    await expect(
+      create.execute({
+        ...userInput,
+        email: 'another@example.com',
+        youthProfile: { ...userInput.youthProfile, cpf: '52998224725' },
+      }),
+    ).rejects.toThrow('CPF já cadastrado.');
+    expect((await repository.findMany({ page: 1, pageSize: 20 })).total).toBe(
+      1,
+    );
   });
 });
