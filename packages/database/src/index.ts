@@ -3,12 +3,10 @@ import { PrismaClient } from './generated/prisma/client.js'
 
 let prismaClient: PrismaClient | undefined
 
-export function getPrismaClient() {
+export function getPrismaClient(connectionString = process.env.DATABASE_URL) {
   if (prismaClient) {
     return prismaClient
   }
-
-  const connectionString = process.env.DATABASE_URL
 
   if (!connectionString) {
     throw new Error(
@@ -16,7 +14,10 @@ export function getPrismaClient() {
     )
   }
 
-  const adapter = new PrismaPg({ connectionString })
+  const adapter = new PrismaPg(
+    { connectionString },
+    { schema: new URL(connectionString).searchParams.get('schema') ?? 'public' },
+  )
   prismaClient = new PrismaClient({ adapter })
 
   return prismaClient

@@ -1,12 +1,12 @@
-import { z } from 'zod'
-import { isValidCnpj, normalizeCnpj } from '../../../domain/cnpj.js'
+import { z } from 'zod';
+import { isValidCnpj, normalizeCnpj } from '../../../domain/cnpj.js';
 
 const requiredText = (max: number) =>
   z
     .string({ error: 'Campo obrigatório.' })
     .trim()
     .min(1, 'Campo obrigatório.')
-    .max(max, `Use no máximo ${max} caracteres.`)
+    .max(max, `Use no máximo ${max} caracteres.`);
 const states = [
   'AC',
   'AL',
@@ -35,7 +35,7 @@ const states = [
   'SP',
   'SE',
   'TO',
-] as const
+] as const;
 
 export const registerCompanySchema = z.strictObject({
   email: requiredText(254)
@@ -69,4 +69,4 @@ export const registerCompanySchema = z.strictObject({
       (value) => /^[1-9]{2}[0-9]{8,9}$/.test(value),
       'Informe DDD e telefone com 10 ou 11 dígitos.',
     ),
-})
+});

@@ -1,12 +1,12 @@
-import { getPrismaClient } from '@conecta/database'
+import { getDatabaseClient } from '../../libs/prisma.js';
 import type {
   CompaniesRepository,
   CreateCompanyData,
-} from '../companies-repository.js'
-import { ConflictError } from '../../use-cases/errors/conflict-error.js'
+} from '../companies-repository.js';
+import { ConflictError } from '../../use-cases/errors/conflict-error.js';
 
 export class PrismaCompaniesRepository implements CompaniesRepository {
-  constructor(private prisma = getPrismaClient()) {}
+  constructor(private prisma = getDatabaseClient()) {}
 
   async findConflict(email: string, cnpj: string) {
     if (
@@ -15,19 +15,19 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
         select: { id: true },
       })
     )
-      return 'email' as const
+      return 'email' as const;
     if (
       await this.prisma.companyProfile.findUnique({
         where: { cnpj },
         select: { id: true },
       })
     )
-      return 'cnpj' as const
-    return null
+      return 'cnpj' as const;
+    return null;
   }
 
   async create(data: CreateCompanyData) {
-    const { email, passwordHash, ...company } = data
+    const { email, passwordHash, ...company } = data;
     try {
       // Prisma nested writes are atomic: account, profile and validation succeed together.
       const user = await this.prisma.user.create({
@@ -48,8 +48,8 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
             },
           },
         },
-      })
-      const profile = user.companyProfile!
+      });
+      const profile = user.companyProfile!;
       return {
         id: profile.id,
         userId: user.id,
@@ -57,7 +57,7 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
           id: profile.validation!.id,
           status: 'PENDING' as const,
         },
-      }
+      };
     } catch (error) {
       // Unique constraints also handle simultaneous requests that pass the precheck.
       if (
@@ -66,10 +66,16 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
         'code' in error &&
         error.code === 'P2002'
       ) {
-        const conflict = await this.findConflict(email, company.cnpj)
-        if (conflict) throw new ConflictError(conflict)
+        const conflict = await this.findConflict(email, company.cnpj);
+        if (conflict)
+          throw new ConflictError(
+            conflict === 'email'
+              ? 'E-mail já cadastrado.'
+              : 'CNPJ já cadastrado.',
+            conflict,
+          );
       }
-      throw error
+      throw error;
     }
   }
 }
