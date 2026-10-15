@@ -18,9 +18,12 @@ export const errorHandler: ErrorRequestHandler = (
   }
 
   if (error instanceof ZodError) {
+    const fields: Record<string, string> = {};
+    for (const issue of error.issues)
+      fields[String(issue.path[0] ?? '_form')] ??= issue.message;
     response
       .status(400)
-      .json({ message: 'Requisição inválida.', issues: error.issues });
+      .json({ message: 'Requisição inválida.', issues: error.issues, fields });
     return;
   }
 
@@ -38,7 +41,12 @@ export const errorHandler: ErrorRequestHandler = (
               : undefined;
 
   if (status && error instanceof Error) {
-    response.status(status).json({ message: error.message });
+    response.status(status).json({
+      message: error.message,
+      ...(error instanceof ConflictError && error.field
+        ? { fields: { [error.field]: error.message } }
+        : {}),
+    });
     return;
   }
 

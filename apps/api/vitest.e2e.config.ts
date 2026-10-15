@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     exclude: ['src/http/controllers/**/schemas.spec.ts'],
     environment: 'node',
-    include: ['src/http/controllers/**/*.spec.ts'],
+    include: ['src/http/controllers/**/*.spec.ts', 'tests/e2e/*.test.ts'],
     setupFiles: ['src/utils/test/setup-e2e.ts'],
     fileParallelism: false,
     hookTimeout: 60000,

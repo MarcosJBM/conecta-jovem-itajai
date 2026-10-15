@@ -13,13 +13,15 @@
     "test:watch": "vitest --config vitest.unit.config.ts",
     "lint": "eslint src *.ts *.mjs",
     "format": "prettier --write src *.ts *.mjs *.json",
-    "format:check": "prettier --check src *.ts *.mjs *.json"
+    "format:check": "prettier --check src *.ts *.mjs *.json",
+    "test": "pnpm test:unit"
   },
   "dependencies": {
     "@conecta/database": "workspace:*",
     "dotenv": "18.0.5",
     "express": "5.2.1",
-    "zod": "4.6.7"
+    "zod": "4.6.7",
+    "bcryptjs": "^3.0.3"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

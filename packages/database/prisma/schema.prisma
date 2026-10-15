@@ -14,14 +14,15 @@ enum UserRole {
 }
 
 model User {
-  id             String          @id @default(uuid()) @db.Uuid
-  email          String          @unique @db.VarChar(254)
-  passwordHash   String          @map("password_hash") @db.VarChar(255)
-  role           UserRole
-  youthProfile   YouthProfile?
-  companyProfile CompanyProfile?
-  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt      DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id                  String              @id @default(uuid()) @db.Uuid
+  email               String              @unique @db.VarChar(254)
+  passwordHash        String              @map("password_hash") @db.VarChar(255)
+  role                UserRole
+  youthProfile        YouthProfile?
+  companyProfile      CompanyProfile?
+  reviewedValidations CompanyValidation[] @relation("ValidationReviewer")
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("users")
 }
@@ -48,7 +49,24 @@ model YouthProfile {
   @@map("youth_profiles")
 }
 
+enum CompanyValidationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model CompanyProfile {
+  // Nullable only for legacy profiles created before company registration existed.
+  cnpj        String?            @unique @db.VarChar(14)
+  legalName   String?            @map("legal_name") @db.VarChar(200)
+  tradeName   String?            @map("trade_name") @db.VarChar(200)
+  city        String?            @db.VarChar(100)
+  state       String?            @db.VarChar(2)
+  contactName String?            @map("contact_name") @db.VarChar(150)
+  contactRole String?            @map("contact_role") @db.VarChar(100)
+  phone       String?            @db.VarChar(11)
+  validation  CompanyValidation?
+
   id        String   @id @default(uuid()) @db.Uuid
   userId    String   @unique @map("user_id") @db.Uuid
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -56,4 +74,19 @@ model CompanyProfile {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("company_profiles")
+}
+
+model CompanyValidation {
+  id              String                  @id @default(uuid()) @db.Uuid
+  companyId       String                  @unique @map("company_id") @db.Uuid
+  company         CompanyProfile          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  status          CompanyValidationStatus @default(PENDING)
+  rejectionReason String?                 @map("rejection_reason") @db.Text
+  reviewedById    String?                 @map("reviewed_by_id") @db.Uuid
+  reviewedBy      User?                   @relation("ValidationReviewer", fields: [reviewedById], references: [id], onDelete: Restrict)
+  reviewedAt      DateTime?               @map("reviewed_at") @db.Timestamptz(3)
+  createdAt       DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([status, createdAt])
+  @@map("company_validations")
 }
