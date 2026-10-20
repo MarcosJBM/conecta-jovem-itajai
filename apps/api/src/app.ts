@@ -1,4 +1,5 @@
 import express from 'express';
+import { companyStatusRoutes } from './http/controllers/companies/status-routes.js';
 import { authRoutes } from './http/controllers/auth/routes.js';
 import { env } from './env.js';
 import { getDatabaseClient } from './libs/prisma.js';
@@ -46,6 +47,7 @@ export function createApp(
 
   app.use('/users', usersRoutes);
   app.post('/companies', registerCompanyController(makeRegisterCompany));
+  app.use('/companies', companyStatusRoutes);
 
   app.use((_request, response) => {
     response.status(404).json({ message: 'Rota não encontrada.' });
