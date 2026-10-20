@@ -177,7 +177,7 @@ apps/api/
       users-repository.ts          # contrato de persistência
       prisma/                      # adaptador concreto
       in-memory/                   # persistência em memória para testes
-    libs/                          # Prisma compartilhado e scrypt
+    libs/                          # Prisma compartilhado e BCrypt
     utils/test/                    # fixtures e lifecycle E2E isolado
   vitest.unit.config.ts
   vitest.e2e.config.ts
@@ -248,16 +248,16 @@ Exemplo de cadastro:
 }
 ```
 
-Cadastro aceita `YOUTH` e `COMPANY`; criação pública de `ADMIN` retorna 403.
+O cadastro em `POST /users` aceita apenas `YOUTH`; `COMPANY` usa `POST /companies`. A criação pública de `ADMIN` retorna 403.
 Email é normalizado para minúsculas e precisa ser único. A senha deve ter
-no mínimo 6 caracteres e é armazenada com scrypt e salt aleatório, por um
+no mínimo 6 caracteres, no máximo 72 bytes UTF-8 e é armazenada com BCrypt, por um
 adaptador injetado. Nenhuma resposta inclui senha ou hash. O papel é imutável
 nas atualizações; campos desconhecidos são rejeitados. PUT exige email e
 senha; PATCH exige ao menos um dos dois. UUID inválido ou entrada inválida
 retorna 400; recurso ausente, 404; duplicidade, 409. O handler também está
 preparado para erros de domínio 401 e 403.
 
-Para `YOUTH`, todos os campos de `youthProfile` são obrigatórios, inclusive
+Para `YOUTH`, os campos de `youthProfile` são obrigatórios, exceto
 complemento, e `acceptedTerms` deve ser `true`. O aceite é validado, sem
 persistência de versão ou data. CPF é validado pelos dígitos verificadores e
 armazenado sem máscara, com unicidade no banco. CPF duplicado retorna 409
@@ -282,12 +282,10 @@ e total usam a mesma transação com `RepeatableRead`. Páginas além do total
 retornam lista vazia. O repositório em memória usa a mesma ordenação, guarda
 atualizações e devolve cópias para impedir mutações externas acidentais.
 
-Não existiam login, sessões nem middleware de autenticação na base analisada.
-Esses fluxos não foram inventados nesta migração. As rotas de consulta,
-atualização e exclusão ainda não verificam identidade ou propriedade: antes
-de disponibilizá-las publicamente, o próximo módulo deve implementar
-autenticação e autorização por proprietário/administrador. Os erros 401/403
-já têm tradução HTTP centralizada; isso não constitui controle de acesso.
+O controle de acesso está descrito na seção de autenticação abaixo. Consultas
+individuais exigem proprietário ou ADMIN; listagem, alteração de credenciais e
+exclusão de usuários exigem ADMIN. O cadastro público de empresas foi separado
+para impedir contas empresariais sem solicitação de validação.
 
 ## Ambiente e execução
 
@@ -330,7 +328,7 @@ Os scripts de formato e lint cobrem a API e suas configurações. Typecheck e
 build cobrem todos os workspaces. Testes unitários executam sem PostgreSQL:
 casos de uso recebem repositórios em memória e um hasher determinístico;
 testam sucesso, armazenamento após mutações, conflitos, entradas inválidas,
-paginação e proibição de cadastro ADMIN. O adaptador scrypt e a validação do
+paginação e proibição de cadastro ADMIN. O adaptador BCrypt e a validação do
 ambiente também possuem testes.
 
 Para E2E, configure `TEST_DATABASE_URL` em `.env` com uma conexão PostgreSQL
@@ -368,7 +366,7 @@ ambiente local/teste. Ele é independente da suíte E2E isolada.
 
 O formulário inicial do frontend cria a conta da empresa e sua solicitação de validação em um único envio para `POST /companies`. Não exige login anterior nem conta separada de representante. O backend define o perfil `COMPANY` e o estado inicial `PENDING`.
 
-Campos obrigatórios: `email`, `password`, `cnpj`, `legalName` (razão social), `city`, `state` (UF), `contactName`, `contactRole` e `phone`. `tradeName` (nome fantasia) é opcional. A senha exige pelo menos 8 caracteres e até 72 bytes UTF-8, limite do BCrypt. Telefone contém DDD e 10 ou 11 dígitos. E-mail é normalizado para minúsculas; CNPJ, para maiúsculas sem máscara. E-mail e CNPJ são únicos.
+Campos obrigatórios: `email`, `password`, `cnpj`, `legalName` (razão social), `city`, `state` (UF), `contactName`, `contactRole` e `phone`. `tradeName` (nome fantasia) é opcional. A senha exige pelo menos 6 caracteres e até 72 bytes UTF-8, limite do BCrypt. Telefone contém DDD e 10 ou 11 dígitos. E-mail é normalizado para minúsculas; CNPJ, para maiúsculas sem máscara. E-mail e CNPJ são únicos.
 
 O cálculo dos dígitos verificadores aceita CNPJ numérico e alfanumérico conforme o [manual da Receita Federal](https://www.gov.br/receitafederal/pt-br/centrais-de-conteudo/publicacoes/documentos-tecnicos/cnpj/manual-dv-cnpj.pdf). Essa validação detecta erros de formato; a consulta cadastral será feita manualmente pelo ADMIN no site da Receita.
 
@@ -435,8 +433,72 @@ pnpm --filter @conecta/api test:e2e
 
 O E2E verifica concorrência, rollback de criação, hash persistido, solicitação pendente, motivo obrigatório na rejeição e exclusão em cascata. Remove os próprios registros ao terminar.
 
-### Próximas etapas acordadas
+### Situação e reenvio da empresa
 
-A listagem e os detalhes para o ADMIN, a consulta manual e as ações de aprovar/rejeitar serão implementadas em etapa própria. Os estados persistidos são `PENDING`, `APPROVED` e `REJECTED`, com campos para responsável e data da análise e motivo de rejeição. A restrição de perfil ADMIN será aplicada no futuro caso de uso de análise.
+A empresa pode fazer login mesmo pendente ou rejeitada. Sua página inicial mostra o estado atual, com atualização manual. Após rejeição, o motivo aparece junto ao formulário de correção dos dados empresariais. O botão “Salvar e solicitar nova análise” atualiza os dados pela mesma conta e retorna o cadastro para `PENDING`, limpando os campos da decisão anterior. Apenas empresas rejeitadas podem reenviar; a transação impede reenvios concorrentes e reverte todas as mudanças em caso de CNPJ duplicado.
 
-Não há upload de documentos ou consulta automática de CNPJ. Exibição do resultado e motivo para a empresa, correção e reenvio com a mesma conta ficam para depois, assim como a definição das permissões da empresa pendente.
+A listagem administrativa e as ações de aprovar/rejeitar continuam para uma etapa própria. Não há upload, consulta automática de CNPJ nem listagem de vagas nesta entrega. Não é permitido alterar o CNPJ de um cadastro pendente ou aprovado pelo endpoint de reenvio.
+
+## Autenticação, sessão e permissões
+
+A entrada “Criar conta” oferece Jovem e Empresa, com formulários separados. Depois do cadastro, o frontend abre o login com confirmação de sucesso. O login é único para `YOUTH`, `COMPANY` e `ADMIN`, e restaura a sessão ao recarregar a página. O frontend usa rotas com hash (`#/login`, `#/cadastro`, `#/cadastro/jovem`, `#/cadastro/empresa`, `#/inicio`) e chamadas `/api/*` no mesmo domínio.
+
+| Endpoint                      | Acesso                                        |
+| ----------------------------- | --------------------------------------------- |
+| `POST /users`                 | Público, somente cadastro YOUTH               |
+| `POST /companies`             | Público, cria COMPANY e solicitação PENDING   |
+| `POST /auth/login`            | Público, e-mail e senha; cria sessão          |
+| `POST /auth/logout`           | Invalida a sessão atual e remove o cookie     |
+| `GET /auth/me`                | Usuário autenticado: id, e-mail e perfil      |
+| `GET /users`                  | ADMIN                                         |
+| `GET /users/:id`              | Proprietário ou ADMIN                         |
+| `PUT/PATCH/DELETE /users/:id` | ADMIN                                         |
+| `GET /companies/me`           | COMPANY, apenas o próprio cadastro e situação |
+| `POST /companies/me/resubmit` | COMPANY rejeitada, apenas o próprio cadastro  |
+
+O login retorna `{ "user": { "id": "...", "email": "...", "role": "YOUTH" } }` e define o cookie `conecta_session`. O valor é um token aleatório de 32 bytes; o PostgreSQL guarda somente seu SHA-256, associado ao usuário e expiração. A sessão tem prazo fixo de 24 horas, sem renovação automática ou “lembrar de mim”. Tokens inválidos, expirados ou revogados retornam 401. O logout exclui o registro e limpa o cookie. Novo login troca a sessão do navegador; alterações de senha invalidam todas as sessões da conta. Outras sessões válidas do mesmo usuário continuam permitidas.
+
+O cookie é `HttpOnly`, `SameSite=Lax`, `Path=/` e `Secure` em produção. Login, logout e escritas autenticadas exigem `X-Requested-With: Conecta`. Quando enviado, `Origin` deve coincidir com a origem da requisição. Não há CORS entre domínios; frontend e `/api` devem ser publicados na mesma origem. Senhas e tokens não são armazenados no localStorage. A API evita cache das respostas e nunca retorna hashes de senha.
+
+Após dez falhas de login pelo mesmo IP, novas tentativas retornam 429 por até 15 minutos. Esse controle é em memória e destinado à execução em uma única instância; reiniciar a API limpa a contagem. Login desconhecido e senha incorreta retornam a mesma mensagem. Sessões expiradas são removidas ao serem usadas e também ao criar novas sessões.
+
+Novas senhas, incluindo as de ADMIN e alterações, usam BCrypt com custo 12. Contas Scrypt antigas continuam podendo entrar; um login válido atualiza o hash para BCrypt e invalida sessões anteriores. Senhas legadas acima de 72 bytes não são truncadas nem convertidas automaticamente; continuam verificadas com Scrypt até uma alteração para uma senha compatível. Dados empresariais e pessoais são limitados pelos contratos de resposta e pelas permissões das rotas. As projeções gerais de usuários não expõem CPF, endereço ou contatos empresariais.
+
+### Preparação do ADMIN
+
+Forneça `ADMIN_EMAIL` e `ADMIN_PASSWORD` somente no ambiente do comando e execute:
+
+```bash
+pnpm --filter @conecta/api admin:create
+```
+
+Não há senha padrão ou credencial versionada. O comando exige senha com pelo menos 6 caracteres e até 72 bytes, grava BCrypt e recusa qualquer e-mail já cadastrado, sem promover ou sobrescrever usuários. O comando não é um endpoint HTTP.
+
+### HTTPS em publicação
+
+O projeto não inclui uma conta de hospedagem ou certificado. Publique o frontend e `/api` no mesmo domínio por meio de um proxy com TLS, redirecione HTTP para HTTPS no proxy e configure `NODE_ENV=production`. Configure `TRUST_PROXY_HOPS` com a quantidade real de proxies confiáveis (normalmente 1); a API deve ser acessível apenas pelo proxy. Não use esse valor se clientes externos puderem atingir diretamente a porta da API.
+
+Em produção, a API recusa HTTP com 426, envia HSTS nas respostas HTTPS e emite apenas cookies Secure. O Vite e a execução local seguem em HTTP com `TRUST_PROXY_HOPS=0`. Os testes simulam HTTPS atrás de um proxy confiável e conferem os atributos do cookie; a configuração real de TLS depende do ambiente de hospedagem.
+
+### Testes desta etapa
+
+As suítes cobrem sessão opaca, prazo fixo, logout e rotação, autorização por perfil/proprietário, recusa de cadastro empresarial incompleto, compatibilidade Scrypt, BCrypt, complemento opcional, criação de ADMIN por comando, proteção contra escritas de outra origem e correção/reenvio de empresas. Os E2E continuam isolando cada arquivo em um schema exclusivo de `TEST_DATABASE_URL`.
+
+## Padrões do frontend
+
+Os arquivos de código usam kebab-case, inclusive componentes e testes (`data-form.tsx`, `company-dashboard.tsx`, `data-form.test.tsx`). As exports React continuam PascalCase. As regras para agentes estão no `AGENTS.md` da raiz e em `apps/web/AGENTS.md`; `check:names` também bloqueia nomes de componentes fora do padrão durante o build.
+
+A interface utiliza [shadcn/ui](https://ui.shadcn.com/docs/installation/vite) e Tailwind CSS 4 com o plugin oficial do Vite. Os componentes oficiais ficam em `apps/web/src/components/ui`; o tema é definido por tokens em `index.css` e o layout usa classes Tailwind. `components.json` configura aliases e o helper local `cn` em `src/lib/utils.ts`.
+
+Os formulários usam [React Hook Form](https://react-hook-form.com/) (`useForm` e `Controller`) para valores, validação ao sair do campo, erros da API e estado de submissão. Campos inválidos recebem mensagens acessíveis e foco; o formulário preserva valores quando o servidor retorna erro.
+
+[Brazilian Utils](https://github.com/brazilian-utils/javascript) é utilizado pelo frontend e pela API para CPF, CNPJ, CEP, celular/telefone e UFs. O frontend aplica máscaras durante digitação, colagem e carregamento de dados existentes. O helper `src/lib/brazilian-data.ts` centraliza o uso da biblioteca. No backend, a validação acontece antes da normalização, evitando aceitar entradas inválidas apenas porque um parser removeu caracteres. CNPJ utiliza `version: 2`, preservando o suporte alfanumérico, e telefones usam a máscara com DDD (`nanp`). Números de celular usam o validador de celular; contatos empresariais aceitam telefone fixo ou celular. A lista de UFs vem de `getStates()`.
+
+```bash
+pnpm --filter @conecta/web check:names
+pnpm --filter @conecta/web test:unit
+pnpm --filter @conecta/web typecheck
+pnpm --filter @conecta/web build
+```
+
+Os testes de formulário com Vitest/Testing Library cobrem máscaras digitadas/coladas, exclusão, campos predefinidos de correção, CNPJ alfanumérico, erros de validação e do servidor, aceite dos termos, senha mínima de 6 caracteres e prevenção de envio duplicado.

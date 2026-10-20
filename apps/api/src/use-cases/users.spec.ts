@@ -20,7 +20,7 @@ beforeEach(() => {
 });
 
 describe('Create user', () => {
-  it.each(['YOUTH', 'COMPANY'] as const)(
+  it.each(['YOUTH'] as const)(
     'persists a %s and its matching profile atomically',
     async (role) => {
       const { user } = await create.execute({
@@ -33,7 +33,7 @@ describe('Create user', () => {
       const stored = await repository.findById(user.id);
       expect(stored?.passwordHash).toBe('hashed:password-123');
       expect(stored?.youthProfile !== null).toBe(role === 'YOUTH');
-      expect(stored?.companyProfile !== null).toBe(role === 'COMPANY');
+      expect(stored?.companyProfile).toBeNull();
     },
   );
 
@@ -320,20 +320,19 @@ describe('Youth registration', () => {
     },
   );
 
-  it.each(Object.keys(userInput.youthProfile))(
-    'requires nonblank %s',
-    async (field) => {
-      await expect(
-        create.execute({
-          ...userInput,
-          youthProfile: { ...userInput.youthProfile, [field]: '   ' },
-        }),
-      ).rejects.toBeInstanceOf(ValidationError);
-      expect((await repository.findMany({ page: 1, pageSize: 20 })).total).toBe(
-        0,
-      );
-    },
-  );
+  it.each(
+    Object.keys(userInput.youthProfile).filter((key) => key !== 'complement'),
+  )('requires nonblank %s', async (field) => {
+    await expect(
+      create.execute({
+        ...userInput,
+        youthProfile: { ...userInput.youthProfile, [field]: '   ' },
+      }),
+    ).rejects.toBeInstanceOf(ValidationError);
+    expect((await repository.findMany({ page: 1, pageSize: 20 })).total).toBe(
+      0,
+    );
+  });
 
   it.each([
     { cpf: '111.111.111-11' },
@@ -369,4 +368,18 @@ describe('Youth registration', () => {
       1,
     );
   });
+});
+
+it('forbids company accounts through generic public registration', async () => {
+  await expect(
+    create.execute({ ...userInput, role: 'COMPANY' }),
+  ).rejects.toBeInstanceOf(ForbiddenError);
+  expect((await repository.findMany({ page: 1, pageSize: 20 })).total).toBe(0);
+});
+it('accepts an absent youth address complement', async () => {
+  const { complement: _complement, ...youthProfile } = userInput.youthProfile;
+  const { user } = await create.execute({ ...userInput, youthProfile });
+  expect((await repository.findById(user.id))?.youthProfile?.complement).toBe(
+    '',
+  );
 });

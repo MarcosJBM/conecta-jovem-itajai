@@ -1,16 +1,25 @@
-import { randomBytes, scrypt } from 'node:crypto';
+import { hash, compare } from 'bcryptjs';
+import { scrypt, timingSafeEqual } from 'node:crypto';
 import type { PasswordHasher } from '../domain/types/password-hasher.js';
 
-export class ScryptPasswordHasher implements PasswordHasher {
-  async hash(password: string) {
-    const salt = randomBytes(16).toString('hex');
+export class BcryptPasswordHasher implements PasswordHasher {
+  hash(password: string) {
+    return hash(password, 12);
+  }
 
-    const key = await new Promise<Buffer>((resolve, reject) => {
-      scrypt(password, salt, 64, (error, result) =>
-        error ? reject(error) : resolve(result),
+  async verify(password: string, stored: string): Promise<boolean> {
+    if (/^\$2[aby]\$/.test(stored)) {
+      if (Buffer.byteLength(password, 'utf8') > 72) return false;
+      return compare(password, stored);
+    }
+    // Compatibility only: existing Scrypt accounts are upgraded after a valid login.
+    const match = /^scrypt:([a-f0-9]{32}):([a-f0-9]{128})$/.exec(stored);
+    if (!match) return false;
+    const actual = await new Promise<Buffer>((resolve, reject) => {
+      scrypt(password, match[1]!, 64, (error, key) =>
+        error ? reject(error) : resolve(key),
       );
     });
-
-    return `scrypt:${salt}:${key.toString('hex')}`;
+    return timingSafeEqual(actual, Buffer.from(match[2]!, 'hex'));
   }
 }

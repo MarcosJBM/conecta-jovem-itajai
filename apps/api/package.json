@@ -14,14 +14,16 @@
     "lint": "eslint src *.ts *.mjs",
     "format": "prettier --write src *.ts *.mjs *.json",
     "format:check": "prettier --check src *.ts *.mjs *.json",
-    "test": "pnpm test:unit"
+    "test": "pnpm test:unit",
+    "admin:create": "tsx --conditions=development scripts/create-admin.ts"
   },
   "dependencies": {
+    "@brazilian-utils/brazilian-utils": "^2.5.0",
     "@conecta/database": "workspace:*",
+    "bcryptjs": "^3.0.3",
     "dotenv": "18.0.5",
     "express": "5.2.1",
-    "zod": "4.6.7",
-    "bcryptjs": "^3.0.3"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
