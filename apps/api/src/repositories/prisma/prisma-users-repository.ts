@@ -89,7 +89,12 @@ export class PrismaUsersRepository implements UsersRepository {
 
   async update(id: string, data: UpdateUserData) {
     try {
-      return await this.prisma.user.update({ where: { id }, data, include });
+      return await this.prisma.$transaction(async (tx) => {
+        const user = await tx.user.update({ where: { id }, data, include });
+        if (data.passwordHash)
+          await tx.session.deleteMany({ where: { userId: id } });
+        return user;
+      });
     } catch (error) {
       if (hasCode(error, 'P2002')) throw new ConflictError();
 

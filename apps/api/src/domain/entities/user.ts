@@ -36,9 +36,22 @@ export type PublicUser = Omit<User, 'passwordHash' | 'youthProfile'> & {
   youthProfile: Profile | null;
 };
 export function toPublicUser(user: User): PublicUser {
-  const { passwordHash: _passwordHash, youthProfile, ...publicUser } = user;
+  const {
+    passwordHash: _passwordHash,
+    youthProfile,
+    companyProfile,
+    ...publicUser
+  } = user;
   return {
     ...publicUser,
+    companyProfile: companyProfile
+      ? {
+          id: companyProfile.id,
+          userId: companyProfile.userId,
+          createdAt: companyProfile.createdAt,
+          updatedAt: companyProfile.updatedAt,
+        }
+      : null,
     youthProfile: youthProfile
       ? {
           id: youthProfile.id,

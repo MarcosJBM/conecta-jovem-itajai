@@ -2,7 +2,13 @@ import { z } from 'zod';
 export const idSchema = z.object({ id: z.uuid() });
 const fields = {
   email: z.string().trim().toLowerCase().pipe(z.email().max(254)),
-  password: z.string().min(6),
+  password: z
+    .string()
+    .min(6)
+    .refine(
+      (value) => Buffer.byteLength(value, 'utf8') <= 72,
+      'Use no máximo 72 bytes.',
+    ),
 };
 const requiredText = z.string().trim().min(1, 'Campo obrigatório.');
 const youthSchema = z.strictObject({
@@ -14,7 +20,7 @@ const youthSchema = z.strictObject({
   postalCode: requiredText,
   street: requiredText,
   number: requiredText,
-  complement: requiredText,
+  complement: z.string().trim().max(200).default(''),
   neighborhood: requiredText,
   city: requiredText,
   state: requiredText,

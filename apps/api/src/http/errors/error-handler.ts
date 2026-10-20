@@ -20,7 +20,7 @@ export const errorHandler: ErrorRequestHandler = (
   if (error instanceof ZodError) {
     const fields: Record<string, string> = {};
     for (const issue of error.issues)
-      fields[String(issue.path[0] ?? '_form')] ??= issue.message;
+      fields[issue.path.join('.') || '_form'] ??= issue.message;
     response
       .status(400)
       .json({ message: 'Requisição inválida.', issues: error.issues, fields });

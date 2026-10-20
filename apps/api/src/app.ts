@@ -1,4 +1,6 @@
 import express from 'express';
+import { authRoutes } from './http/controllers/auth/routes.js';
+import { env } from './env.js';
 import { getDatabaseClient } from './libs/prisma.js';
 import { usersRoutes } from './http/controllers/users/routes.js';
 import { errorHandler } from './http/errors/error-handler.js';
@@ -13,8 +15,21 @@ export function createApp(
   const app = express();
 
   app.disable('x-powered-by');
+  if (env.trustProxyHops) app.set('trust proxy', env.trustProxyHops);
+  app.use((request, response, next) => {
+    if (env.nodeEnv === 'production' && !request.secure) {
+      response.status(426).json({ message: 'HTTPS é obrigatório.' });
+      return;
+    }
+    if (env.nodeEnv === 'production')
+      response.set('Strict-Transport-Security', 'max-age=31536000');
+    response.set('Cache-Control', 'no-store');
+    response.set('X-Content-Type-Options', 'nosniff');
+    next();
+  });
 
   app.use(express.json({ limit: '32kb' }));
+  app.use('/auth', authRoutes);
 
   app.get('/health', (_request, response) => {
     response.status(200).json({ status: 'ok' });

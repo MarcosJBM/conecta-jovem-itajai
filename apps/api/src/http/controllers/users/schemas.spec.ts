@@ -12,13 +12,15 @@ describe('Youth HTTP contract', () => {
     expect(result.error.issues.map((issue) => issue.path.join('.'))).toEqual(
       expect.arrayContaining([
         'acceptedTerms',
-        ...Object.keys(userInput.youthProfile).map(
-          (key) => `youthProfile.${key}`,
-        ),
+        ...Object.keys(userInput.youthProfile)
+          .filter((key) => key !== 'complement')
+          .map((key) => `youthProfile.${key}`),
       ]),
     );
   });
-  it.each(Object.keys(userInput.youthProfile))('rejects missing %s', (key) => {
+  it.each(
+    Object.keys(userInput.youthProfile).filter((key) => key !== 'complement'),
+  )('rejects missing %s', (key) => {
     const youthProfile = { ...userInput.youthProfile } as Record<
       string,
       string

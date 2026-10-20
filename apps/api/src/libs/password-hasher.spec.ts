@@ -1,13 +1,18 @@
 import { scryptSync } from 'node:crypto';
 import { expect, it } from 'vitest';
-import { ScryptPasswordHasher } from './password-hasher.js';
-
-it('uses unique salts and produces a verifiable scrypt hash', async () => {
-  const hasher = new ScryptPasswordHasher();
-  const first = await hasher.hash('password-123');
-  const second = await hasher.hash('password-123');
+import { BcryptPasswordHasher } from './password-hasher.js';
+it('hashes with BCrypt, verifies credentials, and reads legacy Scrypt safely', async () => {
+  const hasher = new BcryptPasswordHasher();
+  const first = await hasher.hash('abcdef');
+  const second = await hasher.hash('abcdef');
+  expect(first).toMatch(/^\$2b\$12\$/);
   expect(first).not.toBe(second);
-  const [, salt, key] = first.split(':');
-  expect(scryptSync('password-123', salt!, 64).toString('hex')).toBe(key);
-  expect(first.length).toBeLessThanOrEqual(255);
+  expect(await hasher.verify('abcdef', first)).toBe(true);
+  expect(await hasher.verify('wrong', first)).toBe(false);
+  const salt = 'a'.repeat(32);
+  const legacy = `scrypt:${salt}:${scryptSync('abcdef', salt, 64).toString('hex')}`;
+  expect(await hasher.verify('abcdef', legacy)).toBe(true);
+  expect(await hasher.verify('wrong', legacy)).toBe(false);
+  expect(await hasher.verify('abcdef', 'broken')).toBe(false);
+  expect(await hasher.verify('á'.repeat(37), first)).toBe(false);
 });

@@ -14,7 +14,8 @@
     "lint": "eslint src *.ts *.mjs",
     "format": "prettier --write src *.ts *.mjs *.json",
     "format:check": "prettier --check src *.ts *.mjs *.json",
-    "test": "pnpm test:unit"
+    "test": "pnpm test:unit",
+    "admin:create": "tsx --conditions=development scripts/create-admin.ts"
   },
   "dependencies": {
     "@brazilian-utils/brazilian-utils": "^2.5.0",

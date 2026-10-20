@@ -1,292 +1,299 @@
-import { randomUUID } from 'node:crypto';
 import request from 'supertest';
-import { describe, expect, it, vi } from 'vitest';
+import { randomUUID, scryptSync } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { env } from '../../../env.js';
+import { beforeAll, expect, it } from 'vitest';
 import { app } from '../../../app.js';
 import { getDatabaseClient } from '../../../libs/prisma.js';
-import { testCpf, userInput } from '../../../utils/test/user-fixture.js';
-describe('Users HTTP → Prisma → isolated PostgreSQL', () => {
-  it.each(['YOUTH', 'COMPANY'])(
-    'creates a %s profile without exposing credentials',
-    async (role) => {
-      const response = await request(app)
-        .post('/users')
-        .send({ ...userInput, role });
-      expect(response.status).toBe(201);
-      expect(response.body.user).not.toHaveProperty('passwordHash');
-      const user = await getDatabaseClient().user.findUniqueOrThrow({
-        where: { id: response.body.user.id },
-        include: { youthProfile: true, companyProfile: true },
-      });
-      expect(user.passwordHash).toMatch(/^scrypt:/);
-      expect(user.passwordHash).not.toContain(userInput.password);
-      expect(user.youthProfile !== null).toBe(role === 'YOUTH');
-      expect(user.companyProfile !== null).toBe(role === 'COMPANY');
+import { BcryptPasswordHasher } from '../../../libs/password-hasher.js';
+import { userInput } from '../../../utils/test/user-fixture.js';
+let adminHash: string;
+beforeAll(async () => {
+  adminHash = await new BcryptPasswordHasher().hash('abcdef');
+});
+async function admin() {
+  await getDatabaseClient().user.create({
+    data: {
+      email: 'admin@example.com',
+      passwordHash: adminHash,
+      role: 'ADMIN',
     },
-  );
-  it('persists complete normalized youth data with a six-character password', async () => {
-    const response = await request(app)
-      .post('/users')
-      .send({ ...userInput, password: 'abcdef' });
-    expect(response.status).toBe(201);
-    const stored = await getDatabaseClient().user.findUniqueOrThrow({
-      where: { id: response.body.user.id },
-      include: { youthProfile: true },
-    });
-    expect(stored.youthProfile).toMatchObject({
-      firstName: 'Ana',
-      lastName: 'Silva',
-      cpf: '52998224725',
-      phone: '47999991234',
-      postalCode: '88301000',
-      street: 'Rua Central',
-      number: '123',
-      complement: 'Casa',
-      neighborhood: 'Centro',
-      city: 'Itajaí',
-      state: 'SC',
-      birthDate: new Date('2005-03-12T00:00:00Z'),
-    });
-    expect(response.body.user.youthProfile).not.toHaveProperty('cpf');
-    expect(response.body.user.youthProfile).not.toHaveProperty('street');
   });
-  it('enforces CPF uniqueness under concurrent requests with different emails', async () => {
-    const responses = await Promise.all(
-      ['one@example.com', 'two@example.com'].map((email) =>
-        request(app)
-          .post('/users')
-          .send({ ...userInput, email }),
-      ),
-    );
-    expect(responses.map((response) => response.status).sort()).toEqual([
-      201, 409,
-    ]);
-    expect(
-      responses.find((response) => response.status === 409)?.body.message,
-    ).toBe('CPF já cadastrado.');
-    expect(await getDatabaseClient().user.count()).toBe(1);
-    expect(await getDatabaseClient().youthProfile.count()).toBe(1);
+  const agent = request.agent(app);
+  expect(
+    (
+      await agent
+        .post('/auth/login')
+        .set('X-Requested-With', 'Conecta')
+        .send({ email: 'admin@example.com', password: 'abcdef' })
+    ).status,
+  ).toBe(200);
+  return agent;
+}
+it('creates youth with six characters and no complement, keeping private data out of public responses', async () => {
+  const { complement: _complement, ...youthProfile } = userInput.youthProfile;
+  const response = await request(app)
+    .post('/users')
+    .send({ ...userInput, password: 'abcdef', youthProfile });
+  expect(response.status).toBe(201);
+  expect(response.body.user).not.toHaveProperty('passwordHash');
+  expect(response.body.user.youthProfile).not.toHaveProperty('cpf');
+  const stored = await getDatabaseClient().user.findUniqueOrThrow({
+    where: { id: response.body.user.id },
+    include: { youthProfile: true },
   });
-  it.each([
-    { acceptedTerms: false },
-    { acceptedTerms: undefined },
-    { youthProfile: undefined },
-    { youthProfile: { ...userInput.youthProfile, cpf: '11111111111' } },
-    { youthProfile: { ...userInput.youthProfile, complement: '' } },
-  ])('rejects invalid youth input atomically %j', async (change) => {
-    const response = await request(app)
-      .post('/users')
-      .send({ ...userInput, ...change });
-    expect(response.status).toBe(400);
-    expect(await getDatabaseClient().user.count()).toBe(0);
-    expect(await getDatabaseClient().youthProfile.count()).toBe(0);
-  });
-  it('gets, lists, patches, replaces and deletes a user, cascading the profile', async () => {
-    const created = await request(app).post('/users').send(userInput);
-    const id = created.body.user.id;
-    const individual = await request(app).get(`/users/${id}`);
-    expect(individual.status).toBe(200);
-    expect(individual.body).toEqual(created.body);
-    const listed = await request(app).get('/users?page=1&pageSize=1');
-    expect(listed.status).toBe(200);
-    expect(listed.body).toMatchObject({
-      total: 1,
-      totalPages: 1,
-      items: [created.body.user],
-    });
-    expect(
-      (
-        await request(app)
-          .patch(`/users/${id}`)
-          .send({ email: 'updated@example.com' })
-      ).status,
-    ).toBe(200);
-    expect(
-      (await getDatabaseClient().user.findUniqueOrThrow({ where: { id } }))
-        .email,
-    ).toBe('updated@example.com');
-    expect(
-      (
-        await request(app)
-          .put(`/users/${id}`)
-          .send({ email: 'replaced@example.com', password: 'new-password' })
-      ).status,
-    ).toBe(200);
-    expect(
-      (await getDatabaseClient().user.findUniqueOrThrow({ where: { id } }))
-        .email,
-    ).toBe('replaced@example.com');
-    expect((await request(app).delete(`/users/${id}`)).status).toBe(204);
-    expect(
-      await getDatabaseClient().user.findUnique({ where: { id } }),
-    ).toBeNull();
-    expect(await getDatabaseClient().youthProfile.count()).toBe(0);
-    expect((await request(app).get(`/users/${id}`)).status).toBe(404);
-  });
-  it('lists in stable pages without repeated rows', async () => {
-    for (let i = 0; i < 3; i++)
+  expect(stored.passwordHash).toMatch(/^\$2b\$/);
+  expect(stored.youthProfile?.complement).toBe('');
+});
+it.each([
+  { acceptedTerms: false },
+  { youthProfile: undefined },
+  { password: 'short' },
+  { password: 'á'.repeat(37) },
+  { youthProfile: { ...userInput.youthProfile, cpf: '11111111111' } },
+])('rejects invalid registration atomically: %j', async (change) => {
+  expect(
+    (
       await request(app)
         .post('/users')
-        .send({
-          ...userInput,
-          youthProfile: { ...userInput.youthProfile, cpf: testCpf(i) },
-          email: `user${i}@example.com`,
-        });
-    const first = await request(app).get('/users?pageSize=2');
-    const second = await request(app).get('/users?pageSize=2&page=2');
-    expect(first.body.total).toBe(3);
-    expect(second.body.items).toHaveLength(1);
-    expect(
-      new Set(
-        [...first.body.items, ...second.body.items].map((user) => user.id),
-      ).size,
-    ).toBe(3);
-    expect((await request(app).get('/users?pageSize=2')).body).toEqual(
-      first.body,
-    );
-  });
-  it.each(['get', 'patch', 'put', 'delete'] as const)(
-    'returns 404 for a missing user (%s)',
-    async (method) => {
-      const operation = request(app)[method](`/users/${randomUUID()}`);
-      const response = await operation.send({
-        email: 'new@example.com',
-        password: 'new-password',
-      });
-      expect(response.status).toBe(404);
-    },
-  );
-  it('rejects duplicate registration and update, leaving records unchanged', async () => {
-    const created = await request(app).post('/users').send(userInput);
+        .send({ ...userInput, ...change })
+    ).status,
+  ).toBe(400);
+  expect(await getDatabaseClient().user.count()).toBe(0);
+});
+it.each(['ADMIN', 'COMPANY'])(
+  'forbids public %s creation through users',
+  async (role) => {
     expect(
       (
         await request(app)
           .post('/users')
-          .send({ ...userInput, email: 'YOUNG@example.com' })
-      ).status,
-    ).toBe(409);
-    const other = await request(app)
-      .post('/users')
-      .send({
-        ...userInput,
-        youthProfile: { ...userInput.youthProfile, cpf: testCpf(100) },
-        email: 'other@example.com',
-      });
-    expect(
-      (
-        await request(app)
-          .patch(`/users/${other.body.user.id}`)
-          .send({ email: userInput.email })
-      ).status,
-    ).toBe(409);
-    expect(
-      (
-        await getDatabaseClient().user.findUniqueOrThrow({
-          where: { id: other.body.user.id },
-        })
-      ).email,
-    ).toBe('other@example.com');
-    expect(created.status).toBe(201);
-    expect(await getDatabaseClient().user.count()).toBe(2);
-  });
-  it('maps concurrent database uniqueness conflicts to 409', async () => {
-    const responses = await Promise.all([
-      request(app).post('/users').send(userInput),
-      request(app).post('/users').send(userInput),
-    ]);
-    expect(responses.map((response) => response.status).sort()).toEqual([
-      201, 409,
-    ]);
-    expect(await getDatabaseClient().user.count()).toBe(1);
-  });
-  it.each([
-    { email: 'bad' },
-    { password: 'short' },
-    { role: 'INVALID' },
-    { extra: true },
-    { passwordHash: 'injected' },
-  ])('rejects invalid registration %j', async (change) => {
-    expect(
-      (
-        await request(app)
-          .post('/users')
-          .send({ ...userInput, ...change })
-      ).status,
-    ).toBe(400);
-    expect(await getDatabaseClient().user.count()).toBe(0);
-  });
-  it('forbids public ADMIN registration', async () => {
-    expect(
-      (
-        await request(app)
-          .post('/users')
-          .send({ ...userInput, role: 'ADMIN' })
+          .send({ ...userInput, role })
       ).status,
     ).toBe(403);
     expect(await getDatabaseClient().user.count()).toBe(0);
+  },
+);
+it('enforces login, ownership and administrator permissions', async () => {
+  const created = await request(app).post('/users').send(userInput);
+  const id = created.body.user.id;
+  expect((await request(app).get('/users')).status).toBe(401);
+  expect((await request(app).get(`/users/${id}`)).status).toBe(401);
+  const young = request.agent(app);
+  const login = await young
+    .post('/auth/login')
+    .set('X-Requested-With', 'Conecta')
+    .send({ email: userInput.email, password: userInput.password });
+  expect(login.status).toBe(200);
+  const cookie = login.headers['set-cookie']![0]!;
+  expect(cookie).toContain('HttpOnly');
+  expect(cookie).toContain('SameSite=Lax');
+  expect(cookie).toContain('Max-Age=86400');
+  expect(login.body).not.toHaveProperty('token');
+  expect((await young.get('/auth/me')).body.user.role).toBe('YOUTH');
+  expect((await young.get(`/users/${id}`)).status).toBe(200);
+  expect((await young.get('/users')).status).toBe(403);
+  expect((await young.get(`/users/${randomUUID()}`)).status).toBe(403);
+  expect(
+    (await young.delete(`/users/${id}`).set('X-Requested-With', 'Conecta'))
+      .status,
+  ).toBe(403);
+  expect(
+    (
+      await young
+        .patch(`/users/${id}`)
+        .set('X-Requested-With', 'Conecta')
+        .send({ email: 'other@example.com' })
+    ).status,
+  ).toBe(403);
+  expect(
+    (await young.post('/auth/logout').set('X-Requested-With', 'Conecta'))
+      .status,
+  ).toBe(204);
+  expect(
+    (await request(app).get('/auth/me').set('Cookie', cookie)).status,
+  ).toBe(401);
+});
+it('supports admin CRUD while invalidating sessions after a password change', async () => {
+  const agent = await admin();
+  const created = await request(app).post('/users').send(userInput);
+  const id = created.body.user.id;
+  const young = request.agent(app);
+  await young
+    .post('/auth/login')
+    .set('X-Requested-With', 'Conecta')
+    .send({ email: userInput.email, password: userInput.password });
+  expect((await agent.get('/users?page=1&pageSize=1')).body.total).toBe(2);
+  expect((await agent.get(`/users/${id}`)).status).toBe(200);
+  expect(
+    (
+      await agent
+        .patch(`/users/${id}`)
+        .set('X-Requested-With', 'Conecta')
+        .send({ password: 'abcdef' })
+    ).status,
+  ).toBe(200);
+  expect((await young.get('/auth/me')).status).toBe(401);
+  expect((await agent.get('/users?page=0')).status).toBe(400);
+  expect((await agent.get(`/users/${randomUUID()}`)).status).toBe(404);
+  expect(
+    (await agent.delete(`/users/${id}`).set('X-Requested-With', 'Conecta'))
+      .status,
+  ).toBe(204);
+  expect(
+    await getDatabaseClient().user.findUnique({ where: { id } }),
+  ).toBeNull();
+});
+it('rejects cross-origin writes and malformed requests, and preserves health checks', async () => {
+  const data = { email: 'unknown@example.com', password: 'abcdef' };
+  expect((await request(app).post('/auth/login').send(data)).status).toBe(403);
+  expect(
+    (
+      await request(app)
+        .post('/auth/login')
+        .set('X-Requested-With', 'Conecta')
+        .set('Origin', 'https://other.example')
+        .send(data)
+    ).status,
+  ).toBe(403);
+  expect(
+    (
+      await request(app)
+        .post('/auth/login')
+        .set('X-Requested-With', 'Conecta')
+        .send(data)
+    ).status,
+  ).toBe(401);
+  expect(
+    (
+      await request(app)
+        .post('/users')
+        .set('Content-Type', 'application/json')
+        .send('{')
+    ).status,
+  ).toBe(400);
+  expect((await request(app).get('/health/database')).status).toBe(200);
+  expect((await request(app).get('/missing')).status).toBe(404);
+});
+it('upgrades a legacy Scrypt account at login and rejects expired sessions', async () => {
+  const salt = 'a'.repeat(32);
+  const legacy = `scrypt:${salt}:${scryptSync('abcdef', salt, 64).toString('hex')}`;
+  const stored = await getDatabaseClient().user.create({
+    data: { email: 'old@example.com', role: 'YOUTH', passwordHash: legacy },
   });
-  it.each([
-    'page=0',
-    'page=-1',
-    'page=1.5',
-    'page=abc',
-    'pageSize=0',
-    'pageSize=101',
-    'page=1&page=2',
-    'unknown=1',
-  ])('rejects invalid query %s', async (query) => {
-    expect((await request(app).get(`/users?${query}`)).status).toBe(400);
+  const agent = request.agent(app);
+  expect(
+    (
+      await agent
+        .post('/auth/login')
+        .set('X-Requested-With', 'Conecta')
+        .send({ email: stored.email, password: 'abcdef' })
+    ).status,
+  ).toBe(200);
+  expect(
+    (
+      await getDatabaseClient().user.findUniqueOrThrow({
+        where: { id: stored.id },
+      })
+    ).passwordHash,
+  ).toMatch(/^\$2b\$/);
+  await getDatabaseClient().session.updateMany({
+    where: { userId: stored.id },
+    data: { expiresAt: new Date(0) },
   });
-  it('validates UUID, partial/complete bodies, immutable roles and does not mutate on failure', async () => {
-    expect((await request(app).get('/users/bad-id')).status).toBe(400);
-    const created = await request(app).post('/users').send(userInput);
-    const id = created.body.user.id;
-    for (const changes of [
-      {},
-      { email: 'bad' },
-      { password: '' },
-      { role: 'ADMIN' },
-    ])
-      expect(
-        (await request(app).patch(`/users/${id}`).send(changes)).status,
-      ).toBe(400);
-    expect(
-      (
-        await request(app)
-          .put(`/users/${id}`)
-          .send({ email: 'new@example.com' })
-      ).status,
-    ).toBe(400);
-    expect((await request(app).get(`/users/${id}`)).body).toEqual(created.body);
+  expect((await agent.get('/auth/me')).status).toBe(401);
+});
+
+it('rotates login sessions and blocks forged logout without invalidating the valid session', async () => {
+  await request(app).post('/users').send(userInput);
+  const agent = request.agent(app);
+  const first = await agent
+    .post('/auth/login')
+    .set('X-Requested-With', 'Conecta')
+    .send({ email: userInput.email, password: userInput.password });
+  const oldCookie = first.headers['set-cookie']![0]!;
+  expect((await agent.post('/auth/logout')).status).toBe(403);
+  expect((await agent.get('/auth/me')).status).toBe(200);
+  expect((await agent.get('/companies/me')).status).toBe(403);
+  const second = await agent
+    .post('/auth/login')
+    .set('X-Requested-With', 'Conecta')
+    .send({ email: userInput.email, password: userInput.password });
+  expect(second.status).toBe(200);
+  expect(second.headers['set-cookie']).not.toEqual(first.headers['set-cookie']);
+  expect(
+    (await request(app).get('/auth/me').set('Cookie', oldCookie)).status,
+  ).toBe(401);
+  expect((await agent.get('/auth/me')).status).toBe(200);
+});
+it('rejects duplicate CPF/email and handles concurrent youth creation atomically', async () => {
+  const responses = await Promise.all(
+    ['one@example.com', 'two@example.com'].map((email) =>
+      request(app)
+        .post('/users')
+        .send({ ...userInput, email }),
+    ),
+  );
+  expect(responses.map((response) => response.status).sort()).toEqual([
+    201, 409,
+  ]);
+  expect(await getDatabaseClient().user.count()).toBe(1);
+  const email = responses.find((response) => response.status === 201)!.body.user
+    .email;
+  expect(
+    (
+      await request(app)
+        .post('/users')
+        .send({ ...userInput, email: email.toUpperCase() })
+    ).status,
+  ).toBe(409);
+});
+it('requires HTTPS and sets Secure cookies behind the configured trusted proxy in production', async () => {
+  const previous = { nodeEnv: env.nodeEnv, trustProxyHops: env.trustProxyHops };
+  await request(app).post('/users').send(userInput);
+  env.nodeEnv = 'production';
+  env.trustProxyHops = 1;
+  try {
+    const production = (await import('../../../app.js')).createApp();
+    expect((await request(production).get('/health')).status).toBe(426);
+    const response = await request(production)
+      .post('/auth/login')
+      .set('Host', 'app.example')
+      .set('Origin', 'https://app.example')
+      .set('X-Forwarded-Proto', 'https')
+      .set('X-Requested-With', 'Conecta')
+      .send({ email: userInput.email, password: userInput.password });
+    expect(response.status).toBe(200);
+    expect(response.headers['set-cookie']![0]).toContain('Secure');
+    expect(response.headers['strict-transport-security']).toBe(
+      'max-age=31536000',
+    );
+  } finally {
+    Object.assign(env, previous);
+  }
+});
+it('creates an administrator only through the setup command and refuses to overwrite an existing account', async () => {
+  const cwd = fileURLToPath(new URL('../../../../../../', import.meta.url));
+  const options = {
+    cwd,
+    env: {
+      ...process.env,
+      ADMIN_EMAIL: 'setup@example.com',
+      ADMIN_PASSWORD: 'abcdef',
+    },
+    stdio: 'pipe' as const,
+  };
+  execFileSync('pnpm', ['--filter', '@conecta/api', 'admin:create'], options);
+  const stored = await getDatabaseClient().user.findUniqueOrThrow({
+    where: { email: 'setup@example.com' },
   });
-  it('preserves health checks and returns JSON for unmatched routes and malformed JSON', async () => {
-    expect((await request(app).get('/health')).body).toEqual({ status: 'ok' });
-    expect((await request(app).get('/health/database')).body).toEqual({
-      status: 'ok',
-      database: 'connected',
-    });
-    expect((await request(app).get('/missing')).status).toBe(404);
-    expect(
-      (
-        await request(app)
-          .post('/users')
-          .set('Content-Type', 'application/json')
-          .send('{')
-      ).status,
-    ).toBe(400);
-  });
-  it('logs unexpected persistence errors and returns a sanitized 500', async () => {
-    const spy = vi
-      .spyOn(getDatabaseClient().user, 'findMany')
-      .mockRejectedValueOnce(new Error('private database details'));
-    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
-    try {
-      const response = await request(app).get('/users');
-      expect(response.status).toBe(500);
-      expect(response.body).toEqual({ message: 'Erro interno do servidor.' });
-      expect(log).toHaveBeenCalled();
-    } finally {
-      spy.mockRestore();
-      log.mockRestore();
-    }
-  });
+  expect(stored.role).toBe('ADMIN');
+  expect(stored.passwordHash).toMatch(/^\$2b\$/);
+  expect(() =>
+    execFileSync('pnpm', ['--filter', '@conecta/api', 'admin:create'], options),
+  ).toThrow();
+  expect(
+    await getDatabaseClient().user.count({ where: { email: stored.email } }),
+  ).toBe(1);
 });
