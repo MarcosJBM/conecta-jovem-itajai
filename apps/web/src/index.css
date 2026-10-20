@@ -1,30 +1,47 @@
+@import 'tailwindcss';
+@custom-variant dark (&:is(.dark *));
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: white;
+  --color-secondary: #eaf1e9;
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: #edf2ed;
+  --color-muted-foreground: #53665b;
+  --color-accent: #eaf1e9;
+  --color-accent-foreground: var(--foreground);
+  --color-destructive: #a22929;
+  --color-destructive-foreground: white;
+  --color-border: #dce5dc;
+  --color-input: #becdc2;
+  --color-ring: #268466;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
 :root {
-  font-family: system-ui, sans-serif;
-  color: #19382e;
-  background: #f3f6f2;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  --background: #f3f6f2;
+  --foreground: #19382e;
+  --card: #fff;
+  --primary: #205e43;
 }
-* {
-  box-sizing: border-box;
-}
-body {
-  margin: 0;
-  min-width: 320px;
-}
-button,
-input,
-select {
-  font: inherit;
-}
-a {
-  color: inherit;
-}
-button,
-select {
-  cursor: pointer;
-}
-:focus-visible {
-  outline: 3px solid #268466;
-  outline-offset: 3px;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply m-0 min-w-80 bg-background font-sans text-foreground antialiased;
+  }
+  h2 {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+  button,
+  summary,
+  select {
+    @apply cursor-pointer;
+  }
 }
