@@ -1,0 +1,13 @@
+node_modules/
+.turbo/
+dist/
+coverage/
+
+.env
+.env.*
+!.env.example
+
+*.log
+.DS_Store
+
+packages/database/src/generated/

@@ -1,0 +1,47 @@
+{
+  "name": "@conecta/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --conditions=development src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "typecheck": "tsc -p tsconfig.test.json --noEmit",
+    "test:unit": "vitest run --config vitest.unit.config.ts",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "test:watch": "vitest --config vitest.unit.config.ts",
+    "lint": "eslint src *.ts *.mjs",
+    "format": "prettier --write src *.ts *.mjs *.json",
+    "format:check": "prettier --check src *.ts *.mjs *.json",
+    "test": "pnpm test:unit",
+    "admin:create": "tsx --conditions=development scripts/create-admin.ts"
+  },
+  "dependencies": {
+    "@brazilian-utils/brazilian-utils": "^2.5.0",
+    "@conecta/database": "workspace:*",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "18.0.5",
+    "express": "5.2.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/express": "5.0.6",
+    "@types/node": "26.6.4",
+    "@types/supertest": "7.2.1",
+    "eslint": "10.12.0",
+    "prettier": "3.9.10",
+    "supertest": "7.3.1",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.2",
+    "vitest": "5.0.4"
+  },
+  "imports": {
+    "#app/*": {
+      "development": "./src/*.ts",
+      "default": "./dist/*.js"
+    }
+  }
+}
