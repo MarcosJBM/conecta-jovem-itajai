@@ -23,6 +23,31 @@ afterEach(() => {
   cleanup()
   vi.resetAllMocks()
 })
+it('removes a repeated field with the keyboard and preserves the remaining skill', async () => {
+  const user = userEvent.setup()
+  vi.mocked(api).mockResolvedValueOnce(result).mockResolvedValueOnce(result)
+  render(<ResumeDashboard expired={vi.fn()} />)
+  const add = await screen.findByRole('button', {
+    name: 'Adicionar habilidade',
+  })
+  await user.click(add)
+  await user.type(screen.getByLabelText('Habilidade 1'), 'Primeira')
+  await user.click(add)
+  await user.type(screen.getByLabelText('Habilidade 2'), 'Segunda')
+  screen.getByRole('button', { name: 'Remover habilidade 1' }).focus()
+  await user.keyboard('{Enter}')
+  expect(
+    (screen.getByLabelText('Habilidade 1') as HTMLInputElement).value,
+  ).toBe('Segunda')
+  await user.click(screen.getByRole('button', { name: 'Salvar currículo' }))
+  await waitFor(() =>
+    expect(api).toHaveBeenLastCalledWith('/resumes/me', 'PUT', {
+      skills: ['Segunda'],
+      educations: [],
+      experiences: [],
+    }),
+  )
+})
 const result = {
   resume: {
     personalDetails: {

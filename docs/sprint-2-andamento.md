@@ -17,4 +17,4 @@ As entregas abaixo são implementações em branches separadas e aguardam revis�
 - Área do jovem com edição de habilidades, formação e experiência usando React Hook Form e coleções dinâmicas; dados pessoais somente em leitura.
 - Visualização do currículo salvo, celular formatado, completude, carregamento, confirmação e erros sem perda de valores. Sem CPF/endereço completo.
 - Testes verificam inclusão/remoção das seções opcionais, habilidade obrigatória quando adicionada, envio sem formação/experiência, preservação em falha, sessão expirada e prevenção de duplo envio.
-- Evidências: 7 testes web aprovados (2 arquivos); typecheck, verificação de nomes e build aprovados. A remoção cancela o registro dos campos excluídos para impedir validações residuais.
+- Evidências: 8 testes web aprovados (2 arquivos); typecheck, verificação de nomes e build aprovados. A validação no envio evita validações de blur concorrentes à remoção. Um teste adicional verifica remoção por teclado e preservação do item restante.

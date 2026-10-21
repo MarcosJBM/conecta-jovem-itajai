@@ -24,8 +24,7 @@ type Values = {
 }
 export function ResumeDashboard({ expired }: { expired: () => void }) {
   const form = useForm<Values>({
-    mode: 'onBlur',
-    shouldUnregister: true,
+    mode: 'onSubmit',
     defaultValues: { skills: [], educations: [], experiences: [] },
   })
   const skills = useFieldArray({ control: form.control, name: 'skills' })
@@ -194,7 +193,6 @@ export function ResumeDashboard({ expired }: { expired: () => void }) {
                         type="button"
                         variant="outline"
                         onClick={() => {
-                          form.unregister(`skills.${i}`)
                           skills.remove(i)
                         }}
                         aria-label={`Remover habilidade ${i + 1}`}
@@ -275,7 +273,6 @@ export function ResumeDashboard({ expired }: { expired: () => void }) {
                         type="button"
                         variant="outline"
                         onClick={() => {
-                          form.unregister(`educations.${i}`)
                           educations.remove(i)
                         }}
                         aria-label={`Remover formação ${i + 1}`}
@@ -368,7 +365,6 @@ export function ResumeDashboard({ expired }: { expired: () => void }) {
                         type="button"
                         variant="outline"
                         onClick={() => {
-                          form.unregister(`experiences.${i}`)
                           experiences.remove(i)
                         }}
                         aria-label={`Remover experiência ${i + 1}`}
