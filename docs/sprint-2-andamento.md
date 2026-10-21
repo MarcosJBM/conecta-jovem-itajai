@@ -18,3 +18,9 @@ As entregas abaixo são implementações em branches separadas e aguardam revis�
 - Visualização do currículo salvo, celular formatado, completude, carregamento, confirmação e erros sem perda de valores. Sem CPF/endereço completo.
 - Testes verificam inclusão/remoção das seções opcionais, habilidade obrigatória quando adicionada, envio sem formação/experiência, preservação em falha, sessão expirada e prevenção de duplo envio.
 - Evidências: 8 testes web aprovados (2 arquivos); typecheck, verificação de nomes e build aprovados. A validação no envio evita validações de blur concorrentes à remoção. Um teste adicional verifica remoção por teclado e preservação do item restante.
+
+## #31 — API de análise empresarial
+
+- Listagem paginada de solicitações pendentes, detalhes e decisão em `/admin/company-validations`, somente ADMIN.
+- Rejeição exige justificativa; ADMIN e data são definidos no servidor. Compare-and-set transacional impede sobrescrever decisões concorrentes; não há documentos ou estado extra de correção.
+- Evidências: 117 testes unitários aprovados; cenário E2E aprovado para permissões, paginação, decisões concorrentes e rejeição → correção/reenvio pela mesma conta → aprovação. Typecheck e lint aprovados.

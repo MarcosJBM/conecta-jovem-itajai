@@ -6,6 +6,7 @@ import { getDatabaseClient } from './libs/prisma.js';
 import { usersRoutes } from './http/controllers/users/routes.js';
 import { errorHandler } from './http/errors/error-handler.js';
 import { resumeRoutes } from './http/controllers/resumes/routes.js';
+import { companyReviewRoutes } from './http/controllers/company-reviews/routes.js';
 
 import { registerCompanyController } from './http/controllers/companies/register-company.js';
 import { makeRegisterCompanyUseCase } from './use-cases/factories/make-register-company.js';
@@ -50,6 +51,7 @@ export function createApp(
   app.post('/companies', registerCompanyController(makeRegisterCompany));
   app.use('/companies', companyStatusRoutes);
   app.use('/resumes', resumeRoutes);
+  app.use('/admin/company-validations', companyReviewRoutes);
 
   app.use((_request, response) => {
     response.status(404).json({ message: 'Rota não encontrada.' });
