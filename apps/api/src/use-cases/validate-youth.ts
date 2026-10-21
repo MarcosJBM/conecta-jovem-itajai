@@ -9,6 +9,7 @@ import {
 } from '@brazilian-utils/brazilian-utils';
 export { isValidCpf } from '@brazilian-utils/brazilian-utils';
 import type { YouthRegistration } from '../domain/entities/user.js';
+import { requiredYouthFields } from '../domain/entities/user.js';
 import { ValidationError } from './errors/validation-error.js';
 
 export type YouthInput = Omit<YouthRegistration, 'birthDate' | 'complement'> & {
@@ -38,19 +39,7 @@ export function normalizeYouth(
     throw new ValidationError('O aceite dos termos é obrigatório.');
   }
 
-  const keys = [
-    'firstName',
-    'lastName',
-    'birthDate',
-    'phone',
-    'cpf',
-    'postalCode',
-    'street',
-    'number',
-    'neighborhood',
-    'city',
-    'state',
-  ] as const;
+  const keys = requiredYouthFields;
 
   const missing = keys.filter(
     (key) => typeof input?.[key] !== 'string' || !input[key].trim(),

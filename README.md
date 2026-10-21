@@ -484,6 +484,54 @@ Em produção, a API recusa HTTP com 426, envia HSTS nas respostas HTTPS e emite
 
 As suítes cobrem sessão opaca, prazo fixo, logout e rotação, autorização por perfil/proprietário, recusa de cadastro empresarial incompleto, compatibilidade Scrypt, BCrypt, complemento opcional, criação de ADMIN por comando, proteção contra escritas de outra origem e correção/reenvio de empresas. Os E2E continuam isolando cada arquivo em um schema exclusivo de `TEST_DATABASE_URL`.
 
+## Dados profissionais e currículo — Sprint 2, tarefa #28
+
+A estrutura de persistência possui um currículo por perfil de jovem, com
+coleções de habilidades, formações e experiências. A migration
+`20261021000000_resume_data` apenas adiciona tabelas e relacionamentos: não
+altera cadastros existentes nem cria currículos ou informações fictícias.
+A exclusão de um currículo remove suas coleções; a exclusão do usuário
+também remove perfil e currículo, sem afetar outros jovens.
+
+Habilidades têm nome. Formação possui instituição, curso, nível e período;
+experiência possui cargo, organização, período e descrição opcional. Os
+períodos usam `YYYY-MM`, sem dia fictício ou conversão de fuso. Registros em
+andamento não têm término; registros concluídos precisam de término igual
+ou posterior ao início. Campos mínimos são exigidos somente quando a
+respectiva formação/experiência é adicionada.
+
+O domínio permite salvar coleções vazias como currículo incompleto.
+`getResumeCompleteness` exige os dados cadastrais obrigatórios e ao menos
+uma habilidade não vazia; complemento, formação e experiência são
+opcionais. A função informa os campos pendentes, sem persistir um indicador
+de completude que possa ficar desatualizado. `normalizeResume` valida e
+normaliza os dados profissionais e rejeita habilidades duplicadas.
+`toResumeView` seleciona nome, cidade/UF e celular para a visualização,
+sem incluir CPF, nascimento ou endereço completo.
+
+Esta etapa entrega modelo, migration e regras reutilizáveis. Os endpoints,
+repositórios do fluxo de edição e a interface são das tarefas #29 e #30.
+Não há edição de dados cadastrais, PDF, upload ou candidatura nesta etapa.
+
+Para validar a migration com dados anteriores e verificar vínculos,
+restrições, rollback e exclusões, configure `TEST_DATABASE_URL` para um
+PostgreSQL de testes e execute:
+
+```bash
+pnpm --filter @conecta/database test:resume
+```
+
+O teste cria um schema exclusivo `test_resume_<uuid>`, aplica as migrations
+anteriores, insere perfis de teste e aplica a nova migration. O schema é
+removido ao final, inclusive em falhas. O comando não usa `DATABASE_URL`
+como alternativa implícita. Os testes de regras fazem parte de
+`pnpm --filter @conecta/api test:unit`. As restrições SQL adicionais de texto
+obrigatório e períodos estão na migration, pois o schema Prisma não
+representa essas constraints `CHECK`.
+
+O histórico de decisões e refinamentos está em
+[docs/registro-de-mudancas.md](docs/registro-de-mudancas.md).
+
 ## Padrões do frontend
 
 Os arquivos de código usam kebab-case, inclusive componentes e testes (`data-form.tsx`, `company-dashboard.tsx`, `data-form.test.tsx`). As exports React continuam PascalCase. As regras para agentes estão no `AGENTS.md` da raiz e em `apps/web/AGENTS.md`; `check:names` também bloqueia nomes de componentes fora do padrão durante o build.
