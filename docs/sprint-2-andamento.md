@@ -37,3 +37,10 @@ As entregas abaixo são implementações em branches separadas e aguardam revis�
 - Opções de contratação/regime/área centralizadas no domínio da API; a interface receberá o catálogo da API, sem lista duplicada. UF validada com Brazilian Utils.
 - Disponibilidade calculada como aberta, vencida ou encerrada. Prazo por data, inclusivo até o fim do dia em `America/Sao_Paulo`, sem job agendado.
 - Evidências: testes de domínio cobrem contratação/regime e limite exato de 23h59m59s999/00h em Brasília; teste de persistência verifica migration, campos, estado inicial e exclusão apenas das vagas da empresa removida. Migration aditiva, sem alteração de registros anteriores.
+
+## #34 — API de gestão das próprias vagas
+
+- Rotas em `/companies/me/jobs`: catálogo de opções, listagem paginada, detalhes, criação direta, substituição de dados e encerramento.
+- Somente COMPANY pode acessar; criação/edição/encerramento exigem aprovação atual. Proprietário é obtido da sessão e não do corpo. Catálogo centralizado retornado à interface.
+- Escritas verificam aprovação dentro da transação e bloqueiam edição de vaga vencida/encerrada; encerramento concorrente preserva a primeira decisão. Não há exclusão física, reabertura, pesquisa pública ou candidatura.
+- Evidências: testes unitários de propriedade, permissões, alteração persistida e prazo; cenário E2E aprovado com entradas inválidas, paginação, acesso cruzado, concorrência e escrita de origem externa. Typecheck e lint aprovados.
