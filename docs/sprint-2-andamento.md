@@ -44,3 +44,10 @@ As entregas abaixo são implementações em branches separadas e aguardam revis�
 - Somente COMPANY pode acessar; criação/edição/encerramento exigem aprovação atual. Proprietário é obtido da sessão e não do corpo. Catálogo centralizado retornado à interface.
 - Escritas verificam aprovação dentro da transação e bloqueiam edição de vaga vencida/encerrada; encerramento concorrente preserva a primeira decisão. Não há exclusão física, reabertura, pesquisa pública ou candidatura.
 - Evidências: testes unitários de propriedade, permissões, alteração persistida e prazo; cenário E2E aprovado com entradas inválidas, paginação, acesso cruzado, concorrência e escrita de origem externa. Typecheck e lint aprovados.
+
+## #35 — interface de gestão de vagas
+
+- Empresa aprovada visualiza suas vagas e usa um formulário único para criar/publicar. Detalhes, edição e encerramento das vagas abertas estão disponíveis; vencidas/encerradas não oferecem edição ou reabertura.
+- Campos de contratação e regime separados, catálogo recebido da API e UFs vindas de Brazilian Utils. React Hook Form, shadcn/ui e Tailwind; Textarea oficial adicionado pelo CLI e adaptado ao helper `cn` local, sem nova dependência.
+- Mensagens de sucesso, erros por campo, valores preservados em falha, sessão expirada e bloqueio de envios repetidos. Pendentes/rejeitadas permanecem no fluxo empresarial anterior.
+- Evidências: 13 testes web aprovados em 4 arquivos; nomes, typecheck e build aprovados. Casos incluem criação direta, falha de edição, encerramento e ausência de reabertura.
