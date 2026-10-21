@@ -48,6 +48,18 @@ test('own resume is private, replacement is atomic and concurrent first saves ke
   const saved = (await agent.get('/resumes/me')).body;
   expect(saved.completeness.complete).toBe(true);
   expect(saved.resume.skills).toEqual(['Comunicação']);
+  expect(saved.resume.educations[0]).not.toHaveProperty('id');
+  expect(saved.resume.educations[0]).not.toHaveProperty('resumeId');
+  const { personalDetails: _personalDetails, ...professionalData } =
+    saved.resume;
+  expect(
+    (
+      await agent
+        .put('/resumes/me')
+        .set('X-Requested-With', 'Conecta')
+        .send(professionalData)
+    ).status,
+  ).toBe(200);
   expect(saved.resume.personalDetails).not.toHaveProperty('cpf');
   expect(saved.resume.personalDetails).not.toHaveProperty('street');
   expect(

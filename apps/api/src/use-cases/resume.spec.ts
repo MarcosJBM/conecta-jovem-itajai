@@ -238,6 +238,25 @@ it('projects only resume personal data and does not expose registration identifi
     experiences: [experience],
   });
   const view = toResumeView(youth, data);
+  const persisted = {
+    ...data,
+    educations: data.educations.map((item) => ({
+      ...item,
+      id: 'internal',
+      resumeId: 'private',
+    })),
+    experiences: data.experiences.map((item) => ({
+      ...item,
+      id: 'internal',
+      resumeId: 'private',
+    })),
+  };
+  expect(toResumeView(youth, persisted).educations[0]).not.toHaveProperty(
+    'resumeId',
+  );
+  expect(toResumeView(youth, persisted).experiences[0]).not.toHaveProperty(
+    'id',
+  );
   expect(Object.keys(view.personalDetails).sort()).toEqual([
     'city',
     'firstName',
