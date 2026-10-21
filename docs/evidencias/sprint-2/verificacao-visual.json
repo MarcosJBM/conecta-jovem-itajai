@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-21",
+  "flows": [
+    "currículo salvo e recarregado",
+    "rejeição com motivo",
+    "correção e reenvio",
+    "aprovação",
+    "publicação direta",
+    "edição",
+    "detalhes",
+    "encerramento"
+  ],
+  "screens": [
+    {
+      "screen": "curriculo",
+      "width": 360,
+      "overflow": false
+    },
+    {
+      "screen": "curriculo",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "screen": "analise-empresa",
+      "width": 360,
+      "overflow": false
+    },
+    {
+      "screen": "analise-empresa",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "screen": "formulario-vaga",
+      "width": 360,
+      "overflow": false
+    },
+    {
+      "screen": "formulario-vaga",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "screen": "gestao-vagas",
+      "width": 360,
+      "overflow": false
+    },
+    {
+      "screen": "gestao-vagas",
+      "width": 1440,
+      "overflow": false
+    }
+  ],
+  "pageErrors": [],
+  "temporarySchemaRemoved": true
+}

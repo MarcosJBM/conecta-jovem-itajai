@@ -51,3 +51,37 @@ As entregas abaixo são implementações em branches separadas e aguardam revis�
 - Campos de contratação e regime separados, catálogo recebido da API e UFs vindas de Brazilian Utils. React Hook Form, shadcn/ui e Tailwind; Textarea oficial adicionado pelo CLI e adaptado ao helper `cn` local, sem nova dependência.
 - Mensagens de sucesso, erros por campo, valores preservados em falha, sessão expirada e bloqueio de envios repetidos. Pendentes/rejeitadas permanecem no fluxo empresarial anterior.
 - Evidências: 13 testes web aprovados em 4 arquivos; nomes, typecheck e build aprovados. Casos incluem criação direta, falha de edição, encerramento e ausência de reabertura.
+
+## #36 — validação integrada e evidências
+
+Execução final em 21/10/2026:
+
+| Verificação | Resultado |
+| --- | --- |
+| API — testes unitários | 120 aprovados, 14 arquivos |
+| API — E2E com banco isolado | 23 aprovados, 7 arquivos |
+| Frontend — testes de interface | 13 aprovados, 4 arquivos |
+| Migration/persistência do currículo | 7 aprovados (principal e 6 subtestes) |
+| Typecheck e lint da API | Aprovados |
+| Formatação da API e verificação de nomes web | Aprovadas |
+| Builds do banco, API e frontend | Aprovados |
+| Navegador real — fluxo integrado | Aprovado |
+| Telas em 360 e 1440 px | 8 capturas, sem overflow horizontal |
+| Erros de página no navegador | Nenhum |
+
+O E2E `sprint-two-flow.test.ts` verifica currículo sem formação/experiência, rejeição, correção/reenvio pela mesma conta, aprovação, publicação direta, edição e encerramento. O mesmo roteiro foi executado na interface com Chromium e dados fictícios; a recarga do navegador confirmou persistência do currículo. Há teste de remoção de campos por teclado na interface. As capturas foram inspecionadas visualmente.
+
+Todos os testes de banco usaram schemas exclusivos do PostgreSQL local, removidos ao final. O arquivo `.env` e o schema de desenvolvimento não foram alterados. O aviso de depreciação do driver PostgreSQL persistiu sem falhas nos testes; não foram alteradas versões de dependências para ocultá-lo.
+
+### Capturas de tela
+
+| Tela | 360 px | 1440 px |
+| --- | --- | --- |
+| Currículo | [Captura](evidencias/sprint-2/curriculo-360.png) | [Captura](evidencias/sprint-2/curriculo-1440.png) |
+| Análise empresarial | [Captura](evidencias/sprint-2/analise-empresa-360.png) | [Captura](evidencias/sprint-2/analise-empresa-1440.png) |
+| Formulário da vaga | [Captura](evidencias/sprint-2/formulario-vaga-360.png) | [Captura](evidencias/sprint-2/formulario-vaga-1440.png) |
+| Gestão das vagas | [Captura](evidencias/sprint-2/gestao-vagas-360.png) | [Captura](evidencias/sprint-2/gestao-vagas-1440.png) |
+
+[Resultado estruturado da verificação visual](evidencias/sprint-2/verificacao-visual.json).
+
+As capturas usam contas e dados de teste. Elas não comprovam publicação, disponibilidade de hospedagem ou auditoria integral de acessibilidade. Não houve revisão por outro integrante nem integração automática em staging.
