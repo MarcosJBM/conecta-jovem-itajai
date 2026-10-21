@@ -3,6 +3,7 @@ import { api, ApiError } from './api'
 import type { AuthUser } from './api'
 import { DataForm } from './components/data-form'
 import { CompanyDashboard } from './components/company-dashboard'
+import { ResumeDashboard } from './components/resume-dashboard'
 import { credentials, companyFields, youthFields } from './forms'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -165,6 +166,8 @@ function App() {
           </nav>
           {user.role === 'COMPANY' ? (
             <CompanyDashboard expired={expired} />
+          ) : user.role === 'YOUTH' ? (
+            <ResumeDashboard expired={expired} />
           ) : (
             <Card className="p-6">
               <h2>

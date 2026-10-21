@@ -11,3 +11,10 @@ As entregas abaixo são implementações em branches separadas e aguardam revis�
 - Validação estrutural estrita, cronologia, limites e normalização; sem edição cadastral, PDF ou upload. Limite HTTP ampliado para 256 KB para comportar as coleções limitadas pelo contrato.
 - Evidências: 116 testes unitários da API aprovados; cenário E2E de currículo aprovado com dois salvamentos concorrentes, isolamento, permissões, remoção e preservação em entrada inválida. Typecheck e lint aprovados.
 - O teste identificou e corrigiu uma consulta SQL que inicialmente não qualificava o schema; o bloqueio usa agora o schema configurado e identificador escapado, com userId parametrizado.
+
+## #30 — interface do currículo
+
+- Área do jovem com edição de habilidades, formação e experiência usando React Hook Form e coleções dinâmicas; dados pessoais somente em leitura.
+- Visualização do currículo salvo, celular formatado, completude, carregamento, confirmação e erros sem perda de valores. Sem CPF/endereço completo.
+- Testes verificam inclusão/remoção das seções opcionais, habilidade obrigatória quando adicionada, envio sem formação/experiência, preservação em falha, sessão expirada e prevenção de duplo envio.
+- Evidências: 7 testes web aprovados (2 arquivos); typecheck, verificação de nomes e build aprovados. A remoção cancela o registro dos campos excluídos para impedir validações residuais.
