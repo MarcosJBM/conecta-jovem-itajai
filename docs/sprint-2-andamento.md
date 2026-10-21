@@ -24,3 +24,9 @@ As entregas abaixo são implementações em branches separadas e aguardam revis�
 - Listagem paginada de solicitações pendentes, detalhes e decisão em `/admin/company-validations`, somente ADMIN.
 - Rejeição exige justificativa; ADMIN e data são definidos no servidor. Compare-and-set transacional impede sobrescrever decisões concorrentes; não há documentos ou estado extra de correção.
 - Evidências: 117 testes unitários aprovados; cenário E2E aprovado para permissões, paginação, decisões concorrentes e rejeição → correção/reenvio pela mesma conta → aprovação. Typecheck e lint aprovados.
+
+## #32 — interface de análise empresarial
+
+- Painel ADMIN com pendências paginadas, detalhes cadastrais, CNPJ/telefone formatados e link para consulta manual na Receita Federal.
+- Formulário de aprovação/rejeição com justificativa obrigatória na rejeição, confirmação e atualização da lista. Conflitos e erros mantêm os valores e permitem atualizar a consulta.
+- Evidências: testes de interface verificam justificativa, decisão, remoção da pendência e concorrência. Nenhum upload, consulta automática de CNPJ ou cadastro de segundo representante foi adicionado.
