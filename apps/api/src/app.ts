@@ -5,6 +5,7 @@ import { env } from './env.js';
 import { getDatabaseClient } from './libs/prisma.js';
 import { usersRoutes } from './http/controllers/users/routes.js';
 import { errorHandler } from './http/errors/error-handler.js';
+import { resumeRoutes } from './http/controllers/resumes/routes.js';
 
 import { registerCompanyController } from './http/controllers/companies/register-company.js';
 import { makeRegisterCompanyUseCase } from './use-cases/factories/make-register-company.js';
@@ -29,7 +30,7 @@ export function createApp(
     next();
   });
 
-  app.use(express.json({ limit: '32kb' }));
+  app.use(express.json({ limit: '256kb' }));
   app.use('/auth', authRoutes);
 
   app.get('/health', (_request, response) => {
@@ -48,6 +49,7 @@ export function createApp(
   app.use('/users', usersRoutes);
   app.post('/companies', registerCompanyController(makeRegisterCompany));
   app.use('/companies', companyStatusRoutes);
+  app.use('/resumes', resumeRoutes);
 
   app.use((_request, response) => {
     response.status(404).json({ message: 'Rota não encontrada.' });
