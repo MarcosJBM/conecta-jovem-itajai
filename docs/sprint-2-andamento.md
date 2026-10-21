@@ -85,3 +85,52 @@ Todos os testes de banco usaram schemas exclusivos do PostgreSQL local, removido
 [Resultado estruturado da verificação visual](evidencias/sprint-2/verificacao-visual.json).
 
 As capturas usam contas e dados de teste. Elas não comprovam publicação, disponibilidade de hospedagem ou auditoria integral de acessibilidade. Não houve revisão por outro integrante nem integração automática em staging.
+
+## #37 — documentação e rastreabilidade da entrega
+
+O README apresenta os contratos HTTP atuais e os passos de execução com migrations. O registro de mudanças mantém a comparação com o PDF M1 e acrescenta o avanço de 21/10, preservando a redação histórica das decisões de 20/10. O desenvolvimento e as verificações foram executados em 21/10; os status de revisão não equivalem a integração concluída.
+
+| História / requisito / caso de uso | Regras aplicadas | Issues | Evidência principal |
+| --- | --- | --- | --- |
+| US03 / RF03 / UC03 — perfil profissional e currículo | RN02 refinada: dados cadastrais obrigatórios + habilidade; formação/experiência opcionais | #28, #29, #30 | Modelos/migration, testes de completude e de API, interface de currículo, captura e teste no navegador |
+| US09 / RF09 / UC09 — decisão administrativa | RN08 refinada: pendente/aprovada/rejeitada; motivo na rejeição e reenvio pela mesma conta | #31, #32; integração com #25 | Testes de permissões e decisões concorrentes, fluxo rejeitar/corrigir/aprovar e painel ADMIN |
+| US10 / RF10 / UC10 — gestão das próprias vagas | RN01, RN04, RN06, RN09: aprovação, propriedade, prazo e trabalho formal | #33, #34, #35 | Migration, API, catálogo, teste de virada do prazo, interface e fluxo publicar/editar/encerrar |
+| Qualidade e gerenciamento de mudanças | Rastreabilidade, testes pertinentes e registro real de datas/evidências | #36, #37 | Teste integrado, este relatório, capturas e registro de mudanças |
+
+### Atualização posterior à revisão técnica
+
+Foi detectada e corrigida a presença de IDs internos nos registros profissionais retornados pela API, que dificultava salvar novamente o currículo após recarregar formação/experiência. A projeção agora seleciona explicitamente apenas os campos do contrato. A correção foi aplicada também à branch da #29 e propagada às demais por merges normais, sem reescrever commits publicados.
+
+A regressão unitária continuou com 120 testes aprovados; os dois E2E afetados (currículo e fluxo integrado) passaram novamente. O navegador confirmou adicionar formação/experiência, salvar, recarregar, salvar novamente e remover essas seções, preservando a habilidade. O resultado estruturado inclui esse roteiro adicional. Capturas foram feitas após aguardar o carregamento da listagem.
+
+### Limites da entrega
+
+- Edição de dados pessoais e de credenciais continua adiada; a informação cadastral é reaproveitada em leitura.
+- Formação/experiência não são obrigatórias; a regra de completude não impõe escolaridade nem experiência prévia.
+- Não há PDF, upload, consulta automática do CNPJ, estado empresarial de correção separado ou histórico permanente de análises.
+- Busca pública, candidatura, acesso empresarial a candidatos, histórico de seleção e notificações permanecem nas próximas sprints.
+- A validação de prazo prepara RN06; o bloqueio de candidatura propriamente dito será aplicado quando a candidatura existir.
+- As verificações de interface em duas larguras e o teste por teclado não substituem uma auditoria integral de acessibilidade ou compatibilidade de navegadores.
+- HTTPS real e hospedagem ficam para o fim, se o projeto for publicado. Não há declaração de disponibilidade de 99% nem de teste de carga nesta entrega.
+
+### Revisão e integração
+
+As PRs são encadeadas na ordem #28 → #29 → #30 → #31 → #32 → #33 → #34 → #35 → #36 → #37 para manter diffs separados e preservar evidências por tarefa. Isso não significa que frentes independentes possuam dependência funcional entre si: é a organização das branches desta execução individual.
+
+A primeira PR é a [#38](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/38), com destino `staging`. As seguintes apontam inicialmente para a branch anterior. Revisar na ordem; após integrar a base, alterar o destino da próxima para `staging`, conforme o fluxo de fechamento de issues já configurado. Nenhum merge foi executado nesta entrega. A revisão por outro integrante prevista no PDF continua sendo uma pendência real, não substituída pela inspeção do assistente.
+
+### PRs por tarefa
+
+| Issue | PR | Base inicial |
+| --- | --- | --- |
+| [#28](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/28) | [#38](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/38) | `staging` |
+| [#29](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/29) | [#39](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/39) | `codex/28-resume-data-model` |
+| [#30](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/30) | [#40](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/40) | `codex/29-resume-api` |
+| [#31](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/31) | [#41](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/41) | `codex/30-resume-interface` |
+| [#32](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/32) | [#42](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/42) | `codex/31-company-review-api` |
+| [#33](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/33) | [#43](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/43) | `codex/32-company-review-interface` |
+| [#34](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/34) | [#44](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/44) | `codex/33-job-data-model` |
+| [#35](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/35) | [#45](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/45) | `codex/34-job-management-api` |
+| [#36](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/36) | [#46](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/46) | `codex/35-job-management-interface` |
+
+A PR da documentação (#37) é vinculada à própria issue no GitHub. Todas as issues permanecem abertas enquanto aguardam revisão e integração; as datas do quadro registram execução real em 21/10/2026.
