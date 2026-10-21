@@ -117,7 +117,7 @@ A regressão unitária continuou com 120 testes aprovados; os dois E2E afetados 
 
 As PRs são encadeadas na ordem #28 → #29 → #30 → #31 → #32 → #33 → #34 → #35 → #36 → #37 para manter diffs separados e preservar evidências por tarefa. Isso não significa que frentes independentes possuam dependência funcional entre si: é a organização das branches desta execução individual.
 
-A primeira PR é a [#38](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/38), com destino `staging`. As seguintes apontam inicialmente para a branch anterior. Revisar na ordem; após integrar a base, alterar o destino da próxima para `staging`, conforme o fluxo de fechamento de issues já configurado. Nenhum merge foi executado nesta entrega. A revisão por outro integrante prevista no PDF continua sendo uma pendência real, não substituída pela inspeção do assistente.
+A primeira PR é a [#38](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/38), com destino `staging`. As seguintes apontam inicialmente para a branch anterior. Revisar na ordem; após integrar a base, alterar o destino da próxima para `staging`, conforme o fluxo de fechamento de issues já configurado. Nenhuma PR foi integrada em `staging` nesta entrega. A revisão por outro integrante prevista no PDF continua sendo uma pendência real, não substituída pela inspeção do assistente.
 
 ### PRs por tarefa
 
@@ -132,5 +132,6 @@ A primeira PR é a [#38](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/
 | [#34](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/34) | [#44](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/44) | `codex/33-job-data-model` |
 | [#35](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/35) | [#45](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/45) | `codex/34-job-management-api` |
 | [#36](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/36) | [#46](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/46) | `codex/35-job-management-interface` |
+| [#37](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/37) | [#47](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/47) | `codex/36-sprint-2-validation` |
 
-A PR da documentação (#37) é vinculada à própria issue no GitHub. Todas as issues permanecem abertas enquanto aguardam revisão e integração; as datas do quadro registram execução real em 21/10/2026.
+Todas as issues permanecem abertas enquanto aguardam revisão e integração; as datas do quadro registram execução real em 21/10/2026.
