@@ -30,3 +30,10 @@ As entregas abaixo são implementações em branches separadas e aguardam revis�
 - Painel ADMIN com pendências paginadas, detalhes cadastrais, CNPJ/telefone formatados e link para consulta manual na Receita Federal.
 - Formulário de aprovação/rejeição com justificativa obrigatória na rejeição, confirmação e atualização da lista. Conflitos e erros mantêm os valores e permitem atualizar a consulta.
 - Evidências: testes de interface verificam justificativa, decisão, remoção da pendência e concorrência. Nenhum upload, consulta automática de CNPJ ou cadastro de segundo representante foi adicionado.
+
+## #33 — modelo e regras de vagas
+
+- Vaga vinculada à empresa com título, descrição, requisitos, cidade/UF, área, contratação, regime e prazo obrigatório. Criação diretamente aberta; sem rascunho/reabertura.
+- Opções de contratação/regime/área centralizadas no domínio da API; a interface receberá o catálogo da API, sem lista duplicada. UF validada com Brazilian Utils.
+- Disponibilidade calculada como aberta, vencida ou encerrada. Prazo por data, inclusivo até o fim do dia em `America/Sao_Paulo`, sem job agendado.
+- Evidências: testes de domínio cobrem contratação/regime e limite exato de 23h59m59s999/00h em Brasília; teste de persistência verifica migration, campos, estado inicial e exclusão apenas das vagas da empresa removida. Migration aditiva, sem alteração de registros anteriores.
