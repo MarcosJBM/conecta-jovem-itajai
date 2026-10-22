@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { api, ApiError } from '../api'
 import { DataForm } from './data-form'
 import { companyFields } from '../forms'
+import { JobsDashboard } from './jobs-dashboard'
 
 type Company = {
   id: string
@@ -74,10 +75,7 @@ export function CompanyDashboard({ expired }: { expired: () => void }) {
           </p>
         )}
         {status === 'APPROVED' && (
-          <p>
-            Sua empresa foi aprovada. As demais funcionalidades estarão
-            disponíveis em uma próxima etapa.
-          </p>
+          <p>Sua empresa foi aprovada e já pode gerenciar suas vagas.</p>
         )}
         {status === 'REJECTED' && (
           <>
@@ -130,6 +128,7 @@ export function CompanyDashboard({ expired }: { expired: () => void }) {
           }}
         />
       )}
+      {status === 'APPROVED' && <JobsDashboard expired={expired} />}
     </>
   )
 }
