@@ -43,7 +43,32 @@ export function toResumeView(profile: YouthProfile, resume: ResumeData) {
       phone: profile.phone,
     },
     skills: [...resume.skills],
-    educations: resume.educations.map((education) => ({ ...education })),
-    experiences: resume.experiences.map((experience) => ({ ...experience })),
+    educations: resume.educations.map(
+      ({ institution, course, level, startMonth, endMonth, inProgress }) => ({
+        institution,
+        course,
+        level,
+        startMonth,
+        endMonth,
+        inProgress,
+      }),
+    ),
+    experiences: resume.experiences.map(
+      ({
+        title,
+        organization,
+        startMonth,
+        endMonth,
+        isCurrent,
+        description,
+      }) => ({
+        title,
+        organization,
+        startMonth,
+        endMonth,
+        isCurrent,
+        description,
+      }),
+    ),
   };
 }
