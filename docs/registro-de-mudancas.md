@@ -112,3 +112,31 @@ Em 20/10/2026 foram criadas as issues abaixo, vinculadas ao marco Sprint 2, atri
 | [#35](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/35) | Criar interface empresarial de cadastro e gestão de vagas    | US10 / RF10 / RN01, RN04, RN06, RN09           |
 | [#36](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/36) | Validar os fluxos integrados e reunir evidências da sprint 2 | US03, US09, US10 / qualidade e rastreabilidade |
 | [#37](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/37) | Documentar mudanças, rastreabilidade e entrega da sprint 2   | US03, US09, US10 / qualidade e rastreabilidade |
+
+## Implementações seguintes e limites — 21/10/2026
+
+As tarefas #29–#35 receberam implementação de API e interface para currículo,
+análise empresarial e gestão das próprias vagas, usando a base da #28.
+As decisões M15–M21 foram aplicadas com o recorte aprovado: dados cadastrais
+somente leitura, currículo na plataforma, habilidades para completude,
+formação/experiência opcionais, rejeição com motivo/reenvio e criação direta
+de vagas formais. Não foram acrescentados documentos, PDF ou rascunho de vaga.
+
+A #36 executou regressão e o fluxo integrado no navegador; a #37 atualizou
+README, rastreabilidade e este registro. As entregas estão preparadas para
+revisão e integração; isso não declara que as PRs foram mergeadas ou que a
+sprint foi aceita pela professora. A execução foi individual, conforme
+confirmado por Marcos, sem alegação de revisão por outro integrante.
+
+O [relatório de andamento](sprint-2-andamento.md) apresenta as evidências:
+120 testes unitários da API, 23 E2E, 13 de interface, 7 verificações de
+persistência/migration e 8 capturas em 360/1440 px. Houve inspeção visual das
+capturas e nenhum erro de página/overflow no roteiro verificado. Esses
+resultados não equivalem a auditoria completa de acessibilidade, carga,
+desempenho de todas as operações ou disponibilidade publicada.
+
+RN02 está representada pelo indicador de completude do currículo. O bloqueio
+de candidatura usando essa regra permanece para S3. RF04–RF07 e RF11–RF12
+continuam fora da entrega de S2. HTTPS real, publicação e monitoramento seguem
+condicionais à hospedagem no final do projeto. As datas acadêmicas originais
+não foram alteradas e nenhuma conclusão foi retroagida.
