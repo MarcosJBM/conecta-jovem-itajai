@@ -18,7 +18,8 @@
     "prebuild": "prisma generate",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test:integration": "pnpm build && node --test tests/*.test.mjs"
+    "test:integration": "pnpm build && node --test tests/*.test.mjs",
+    "test:resume": "pnpm build && node --test tests/isolated/resume.integration.test.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",

@@ -44,10 +44,64 @@ model YouthProfile {
   id           String    @id @default(uuid()) @db.Uuid
   userId       String    @unique @map("user_id") @db.Uuid
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume       Resume?
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("youth_profiles")
+}
+
+model Resume {
+  id             String             @id @default(uuid()) @db.Uuid
+  youthProfileId String             @unique @map("youth_profile_id") @db.Uuid
+  youthProfile   YouthProfile       @relation(fields: [youthProfileId], references: [id], onDelete: Cascade)
+  skills         ResumeSkill[]
+  educations     ResumeEducation[]
+  experiences    ResumeExperience[]
+  createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("resumes")
+}
+
+model ResumeSkill {
+  id       String @id @default(uuid()) @db.Uuid
+  resumeId String @map("resume_id") @db.Uuid
+  resume   Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  name     String @db.VarChar(100)
+
+  @@unique([resumeId, name])
+  @@map("resume_skills")
+}
+
+model ResumeEducation {
+  id          String  @id @default(uuid()) @db.Uuid
+  resumeId    String  @map("resume_id") @db.Uuid
+  resume      Resume  @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  institution String  @db.VarChar(200)
+  course      String  @db.VarChar(200)
+  level       String  @db.VarChar(100)
+  startMonth  String  @map("start_month") @db.VarChar(7)
+  endMonth    String? @map("end_month") @db.VarChar(7)
+  inProgress  Boolean @default(false) @map("in_progress")
+
+  @@index([resumeId])
+  @@map("resume_educations")
+}
+
+model ResumeExperience {
+  id           String  @id @default(uuid()) @db.Uuid
+  resumeId     String  @map("resume_id") @db.Uuid
+  resume       Resume  @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  title        String  @db.VarChar(150)
+  organization String  @db.VarChar(200)
+  startMonth   String  @map("start_month") @db.VarChar(7)
+  endMonth     String? @map("end_month") @db.VarChar(7)
+  isCurrent    Boolean @default(false) @map("is_current")
+  description  String? @db.VarChar(2000)
+
+  @@index([resumeId])
+  @@map("resume_experiences")
 }
 
 enum CompanyValidationStatus {
