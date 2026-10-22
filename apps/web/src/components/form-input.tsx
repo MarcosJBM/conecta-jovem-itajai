@@ -10,6 +10,7 @@ export function FormInput({
   maxLength,
   disabled = false,
   minMonth,
+  minDate,
 }: {
   name: string
   label: string
@@ -18,6 +19,7 @@ export function FormInput({
   maxLength?: number
   disabled?: boolean
   minMonth?: string
+  minDate?: string
 }) {
   const { register, getFieldState, formState } = useFormContext()
   const error = getFieldState(name, formState).error
@@ -31,6 +33,7 @@ export function FormInput({
         id={name}
         type={type}
         disabled={disabled}
+        min={minDate}
         aria-invalid={!!error}
         aria-describedby={error ? `${name}-error` : undefined}
         {...register(name, {
@@ -44,6 +47,8 @@ export function FormInput({
               return 'Informe um mês válido.'
             if (minMonth && value < minMonth)
               return 'O término deve ser igual ou posterior ao início.'
+            if (minDate && value < minDate)
+              return 'Informe um prazo a partir de hoje.'
             return true
           },
           maxLength: maxLength
