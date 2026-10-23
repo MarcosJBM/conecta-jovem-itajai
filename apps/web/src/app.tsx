@@ -3,6 +3,8 @@ import { api, ApiError } from './api'
 import type { AuthUser } from './api'
 import { DataForm } from './components/data-form'
 import { CompanyDashboard } from './components/company-dashboard'
+import { ResumeDashboard } from './components/resume-dashboard'
+import { AdminDashboard } from './components/admin-dashboard'
 import { credentials, companyFields, youthFields } from './forms'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -165,19 +167,10 @@ function App() {
           </nav>
           {user.role === 'COMPANY' ? (
             <CompanyDashboard expired={expired} />
+          ) : user.role === 'YOUTH' ? (
+            <ResumeDashboard expired={expired} />
           ) : (
-            <Card className="p-6">
-              <h2>
-                {user.role === 'ADMIN'
-                  ? 'Área do administrador'
-                  : 'Sua conta está pronta'}
-              </h2>
-              <p>
-                {user.role === 'ADMIN'
-                  ? 'Você está conectado como administrador. As ferramentas de gestão serão disponibilizadas em uma próxima etapa.'
-                  : 'Você está conectado. A listagem de vagas estará disponível em uma próxima etapa.'}
-              </p>
-            </Card>
+            <AdminDashboard expired={expired} />
           )}
         </>
       ) : page === '/cadastro' ? (

@@ -19,6 +19,20 @@ export interface YouthRegistration {
   city: string;
   state: string;
 }
+export const requiredYouthFields = [
+  'firstName',
+  'lastName',
+  'birthDate',
+  'phone',
+  'cpf',
+  'postalCode',
+  'street',
+  'number',
+  'neighborhood',
+  'city',
+  'state',
+] as const satisfies readonly (keyof YouthRegistration)[];
+
 export type YouthProfile = Profile & {
   [K in keyof YouthRegistration]: YouthRegistration[K] | null;
 };

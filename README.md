@@ -274,7 +274,7 @@ As respostas públicas preservam apenas identidade e timestamps do perfil,
 sem expor seus dados pessoais e de endereço. A migration adiciona campos
 anuláveis para preservar perfis anteriores; novos cadastros pela API exigem
 todos os dados. Não há preenchimento fictício nem alteração dos dados legados.
-O fluxo de aprovação de empresas será implementado separadamente.
+A análise administrativa das empresas está disponível no painel ADMIN, conforme o contrato da sprint 2 abaixo.
 
 Paginação aceita página inteira positiva e `pageSize` de 1 a 100 (padrão 20).
 A ordenação é explícita por `createdAt ASC, id ASC`; consultas de registros
@@ -437,7 +437,7 @@ O E2E verifica concorrência, rollback de criação, hash persistido, solicitaç
 
 A empresa pode fazer login mesmo pendente ou rejeitada. Sua página inicial mostra o estado atual, com atualização manual. Após rejeição, o motivo aparece junto ao formulário de correção dos dados empresariais. O botão “Salvar e solicitar nova análise” atualiza os dados pela mesma conta e retorna o cadastro para `PENDING`, limpando os campos da decisão anterior. Apenas empresas rejeitadas podem reenviar; a transação impede reenvios concorrentes e reverte todas as mudanças em caso de CNPJ duplicado.
 
-A listagem administrativa e as ações de aprovar/rejeitar continuam para uma etapa própria. Não há upload, consulta automática de CNPJ nem listagem de vagas nesta entrega. Não é permitido alterar o CNPJ de um cadastro pendente ou aprovado pelo endpoint de reenvio.
+A listagem administrativa e as ações de aprovar/rejeitar estão implementadas na sprint 2. Empresas aprovadas têm gestão das próprias vagas. Não há upload ou consulta automática de CNPJ. Não é permitido alterar o CNPJ de um cadastro pendente ou aprovado pelo endpoint de reenvio.
 
 ## Autenticação, sessão e permissões
 
@@ -483,6 +483,124 @@ Em produção, a API recusa HTTP com 426, envia HSTS nas respostas HTTPS e emite
 ### Testes desta etapa
 
 As suítes cobrem sessão opaca, prazo fixo, logout e rotação, autorização por perfil/proprietário, recusa de cadastro empresarial incompleto, compatibilidade Scrypt, BCrypt, complemento opcional, criação de ADMIN por comando, proteção contra escritas de outra origem e correção/reenvio de empresas. Os E2E continuam isolando cada arquivo em um schema exclusivo de `TEST_DATABASE_URL`.
+
+## Dados profissionais e currículo — Sprint 2, tarefa #28
+
+A estrutura de persistência possui um currículo por perfil de jovem, com
+coleções de habilidades, formações e experiências. A migration
+`20261021000000_resume_data` apenas adiciona tabelas e relacionamentos: não
+altera cadastros existentes nem cria currículos ou informações fictícias.
+A exclusão de um currículo remove suas coleções; a exclusão do usuário
+também remove perfil e currículo, sem afetar outros jovens.
+
+Habilidades têm nome. Formação possui instituição, curso, nível e período;
+experiência possui cargo, organização, período e descrição opcional. Os
+períodos usam `YYYY-MM`, sem dia fictício ou conversão de fuso. Registros em
+andamento não têm término; registros concluídos precisam de término igual
+ou posterior ao início. Campos mínimos são exigidos somente quando a
+respectiva formação/experiência é adicionada.
+
+O domínio permite salvar coleções vazias como currículo incompleto.
+`getResumeCompleteness` exige os dados cadastrais obrigatórios e ao menos
+uma habilidade não vazia; complemento, formação e experiência são
+opcionais. A função informa os campos pendentes, sem persistir um indicador
+de completude que possa ficar desatualizado. `normalizeResume` valida e
+normaliza os dados profissionais e rejeita habilidades duplicadas.
+`toResumeView` seleciona nome, cidade/UF e celular para a visualização,
+sem incluir CPF, nascimento ou endereço completo.
+
+A tarefa #28 entregou modelo, migration e regras reutilizáveis. As tarefas
+#29 e #30 acrescentaram repositórios, casos de uso, endpoints e interface
+de edição/visualização do próprio currículo.
+Não há edição de dados cadastrais, PDF, upload ou candidatura nesta etapa.
+
+Para validar a migration com dados anteriores e verificar vínculos,
+restrições, rollback e exclusões, configure `TEST_DATABASE_URL` para um
+PostgreSQL de testes e execute:
+
+```bash
+pnpm --filter @conecta/database test:resume
+```
+
+O teste cria um schema exclusivo `test_resume_<uuid>`, aplica as migrations
+anteriores, insere perfis de teste e aplica a nova migration. O schema é
+removido ao final, inclusive em falhas. O comando não usa `DATABASE_URL`
+como alternativa implícita. Os testes de regras fazem parte de
+`pnpm --filter @conecta/api test:unit`. As restrições SQL adicionais de texto
+obrigatório e períodos estão na migration, pois o schema Prisma não
+representa essas constraints `CHECK`.
+
+O histórico de decisões e refinamentos está em
+[docs/registro-de-mudancas.md](docs/registro-de-mudancas.md).
+
+## Fluxos e contratos da Sprint 2
+
+A área do jovem permite salvar e visualizar currículo, mesmo incompleto.
+Formação e experiência são opcionais. O ADMIN consulta empresas pendentes,
+abre os dados e aprova ou rejeita com motivo obrigatório. A empresa rejeitada
+corrige e reenvia pela mesma conta; após aprovação, cria vagas diretamente
+pelo formulário, consulta suas vagas, edita as abertas e as encerra.
+
+| Método | Rota | Permissão e resultado |
+| --- | --- | --- |
+| GET | `/resumes/me` | YOUTH; currículo salvo ou vazio, completude e pendências |
+| PUT | `/resumes/me` | YOUTH; substituição atômica das coleções profissionais |
+| GET | `/admin/company-validations?page=1&pageSize=10` | ADMIN; solicitações pendentes paginadas |
+| GET | `/admin/company-validations/:id` | ADMIN; dados para análise manual |
+| POST | `/admin/company-validations/:id/decision` | ADMIN; aprovação/rejeição de solicitação pendente |
+| GET | `/companies/me/jobs/options` | COMPANY; catálogo de contratação/regime/área e data atual em Brasília |
+| GET | `/companies/me/jobs?page=1&pageSize=10` | COMPANY; somente as próprias vagas, inclusive vencidas/encerradas |
+| GET | `/companies/me/jobs/:id` | COMPANY; detalhes de vaga própria |
+| POST | `/companies/me/jobs` | COMPANY aprovada; cria vaga já aberta, resposta 201 |
+| PUT | `/companies/me/jobs/:id` | COMPANY aprovada; substitui dados de vaga própria aberta |
+| POST | `/companies/me/jobs/:id/close` | COMPANY aprovada; encerra vaga própria aberta |
+
+Todas essas rotas exigem sessão; escritas também exigem as proteções de
+origem já adotadas. IDs de proprietário, status, responsável administrativo
+e data da decisão são definidos no servidor. Solicitações inválidas retornam
+400, acesso anônimo 401, perfil sem permissão 403, recurso ausente/de outra
+empresa 404 e conflito de estado 409. Paginação usa página positiva e
+`pageSize` de 1 a 100. Formulários preservam valores e exibem erros por campo.
+O corpo JSON tem limite de 256 KB, com coleções e textos limitados pelo contrato.
+
+A substituição de currículo recebe `skills` (nomes), `educations` e
+`experiences`; arrays vazios são aceitos. Formação contém `institution`,
+`course`, `level`, `startMonth`, `endMonth` e `inProgress`; experiência contém
+`title`, `organization`, `startMonth`, `endMonth`, `isCurrent` e `description`.
+Meses usam `YYYY-MM`, término em andamento é `null` e a descrição é opcional
+(com valor `null`). Campos pessoais não fazem parte do corpo de atualização.
+
+Decisão administrativa recebe `{ "status": "APPROVED" }` ou
+`{ "status": "REJECTED", "reason": "Justificativa" }`. Aprovar ou rejeitar
+uma solicitação já decidida produz conflito; decisões concorrentes não se
+sobrescrevem. Consulta manual na Receita Federal não comprova integração
+externa nem validação automática. O reenvio continua preservando a conta e
+limpando os campos da decisão corrente; não existe histórico permanente de
+análises nesta versão.
+
+Vagas exigem `title`, `description`, `requirements`, `city`, `state`, `area`,
+`contract`, `regime` e `deadline` (`YYYY-MM-DD`). O catálogo da API é a fonte
+para a interface: contratação aceita aprendizagem, estágio e emprego formal;
+regime aceita presencial, híbrido e remoto. A área é um catálogo simples
+centralizado no domínio. UF usa Brazilian Utils, também no backend.
+
+O prazo é inclusivo até o fim do dia em `America/Sao_Paulo`. A resposta
+informa `availability` como `OPEN`, `EXPIRED` ou `CLOSED`, calculada a partir
+do prazo e do encerramento. Não há rascunho, etapa separada de publicação,
+reabertura ou exclusão física no fluxo. Edição/encerramento exigem vaga
+aberta; a gravação também verifica aprovação empresarial na transação.
+Busca pública, candidatura, candidatos e histórico de seleção ficam para
+as próximas sprints.
+
+Para executar esta versão em desenvolvimento, use os passos de ambiente e
+migrations do início deste README, incluindo `pnpm db:migrate:deploy` antes
+de iniciar a API. As validações desta entrega utilizaram somente schemas
+de teste; o schema local de desenvolvimento não foi alterado automaticamente.
+
+Rastreabilidade, resultados e capturas em 360/1440 px:
+[docs/sprint-2-andamento.md](docs/sprint-2-andamento.md).
+Decisões em relação ao PDF:
+[docs/registro-de-mudancas.md](docs/registro-de-mudancas.md).
 
 ## Padrões do frontend
 
