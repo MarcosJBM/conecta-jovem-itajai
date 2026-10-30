@@ -1,37 +1,40 @@
-import { useRef } from 'react'
-import { Controller, useForm } from 'react-hook-form'
-import type { ChangeEvent } from 'react'
-import { ApiError } from '../api'
-import type { Field } from '../forms'
+import { useRef } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import type { ChangeEvent } from 'react';
+import { ApiError } from '../api';
+import type { Field } from '../forms';
 import {
   states,
   formatBrazilianField,
   validateBrazilianField,
-} from '@/lib/brazilian-data'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+} from '@/lib/brazilian-data';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-} from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+} from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from '@/components/ui/native-select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // TODO: Sempre usar interface invés de type
 type Props = {
-  title: string
-  fields: Field[]
-  action: string
-  initial?: Record<string, string | undefined>
-  terms?: boolean
-  login?: boolean
-  onSubmit: (data: Record<string, string>) => Promise<void>
-}
+  title: string;
+  fields: Field[];
+  action: string;
+  initial?: Record<string, string | undefined>;
+  terms?: boolean;
+  login?: boolean;
+  onSubmit: (data: Record<string, string>) => Promise<void>;
+};
 
 export function DataForm({
   title,
@@ -59,54 +62,55 @@ export function DataForm({
       ),
       ...(terms ? { acceptedTerms: '' } : {}),
     },
-  })
-  const lock = useRef(false)
-  const feedback = useRef<HTMLDivElement>(null)
-  const maskedNames = ['cpf', 'cnpj', 'postalCode', 'phone']
+  });
+
+  const lock = useRef(false);
+  const feedback = useRef<HTMLDivElement>(null);
+  const maskedNames = ['cpf', 'cnpj', 'postalCode', 'phone'];
   function change(
     event: ChangeEvent<HTMLInputElement>,
     name: string,
     onChange: (value: string) => void,
   ) {
-    const input = event.currentTarget
-    const value = input.value
+    const input = event.currentTarget;
+    const value = input.value;
     if (!maskedNames.includes(name)) {
-      onChange(value)
-      return
+      onChange(value);
+      return;
     }
-    const position = input.selectionStart ?? value.length
+    const position = input.selectionStart ?? value.length;
     const significant = (character: string) =>
       '0123456789'.includes(character) ||
       (name === 'cnpj' &&
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.includes(character.toUpperCase()))
-    const before = [...value.slice(0, position)].filter(significant).length
-    const formatted = formatBrazilianField(name, value)
-    onChange(formatted)
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.includes(character.toUpperCase()));
+    const before = [...value.slice(0, position)].filter(significant).length;
+    const formatted = formatBrazilianField(name, value);
+    onChange(formatted);
     requestAnimationFrame(() => {
-      if (document.activeElement !== input) return
+      if (document.activeElement !== input) return;
       let cursor = 0,
-        count = 0
+        count = 0;
       while (cursor < formatted.length && count < before) {
-        if (significant(formatted[cursor])) count++
-        cursor++
+        if (significant(formatted[cursor])) count++;
+        cursor++;
       }
-      input.setSelectionRange(cursor, cursor)
-    })
+      input.setSelectionRange(cursor, cursor);
+    });
   }
   async function submit(data: Record<string, string>) {
-    if (lock.current) return
-    lock.current = true
-    clearErrors()
+    if (lock.current) return;
+    lock.current = true;
+    clearErrors();
     try {
-      await onSubmit(data)
+      await onSubmit(data);
     } catch (error) {
       setError('root.server', {
         message:
           error instanceof Error
             ? error.message
             : 'Não foi possível conectar ao servidor.',
-      })
-      let focused = false
+      });
+      let focused = false;
       if (error instanceof ApiError)
         for (const [name, message] of Object.entries(error.fields)) {
           if (
@@ -117,13 +121,13 @@ export function DataForm({
               name,
               { type: 'server', message },
               { shouldFocus: !focused },
-            )
-            focused = true
+            );
+            focused = true;
           }
         }
-      if (!focused) requestAnimationFrame(() => feedback.current?.focus())
+      if (!focused) requestAnimationFrame(() => feedback.current?.focus());
     } finally {
-      lock.current = false
+      lock.current = false;
     }
   }
   return (
@@ -170,23 +174,23 @@ export function DataForm({
                         }
                       : undefined,
                     validate: (value) => {
-                      if (field.optional && !value) return true
-                      if (!value.trim()) return 'Campo obrigatório.'
+                      if (field.optional && !value) return true;
+                      if (!value.trim()) return 'Campo obrigatório.';
                       if (field.name === 'password') {
                         if (!login && value.length < 6)
-                          return 'Use pelo menos 6 caracteres.'
+                          return 'Use pelo menos 6 caracteres.';
                         if (
                           !login &&
                           new TextEncoder().encode(value).length > 72
                         )
-                          return 'Use no máximo 72 bytes na senha.'
+                          return 'Use no máximo 72 bytes na senha.';
                       }
 
                       return validateBrazilianField(
                         field.name,
                         value,
                         field.mobileOnly,
-                      )
+                      );
                     },
                   }}
                   render={({ field: input, fieldState }) => (
@@ -336,5 +340,5 @@ export function DataForm({
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }
