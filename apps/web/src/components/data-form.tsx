@@ -22,6 +22,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
+// TODO: Sempre usar interface invés de type
 type Props = {
   title: string
   fields: Field[]
