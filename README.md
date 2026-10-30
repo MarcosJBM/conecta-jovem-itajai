@@ -620,3 +620,45 @@ pnpm --filter @conecta/web build
 ```
 
 Os testes de formulário com Vitest/Testing Library cobrem máscaras digitadas/coladas, exclusão, campos predefinidos de correção, CNPJ alfanumérico, erros de validação e do servidor, aceite dos termos, senha mínima de 6 caracteres e prevenção de envio duplicado.
+
+## Dados de desenvolvimento
+
+Com o PostgreSQL local iniciado, migrations aplicadas e o ADMIN já cadastrado, execute:
+
+```bash
+pnpm db:seed
+```
+
+O comando usa `DATABASE_URL` do `.env` da raiz. `NODE_ENV` deve ser
+`development`; quando ausente, este comando assume desenvolvimento.
+Aceita apenas PostgreSQL local (`localhost`, `127.0.0.1`, `::1` ou o serviço
+`postgres` do Compose). Não cria nem altera o ADMIN: exige exatamente um
+existente e o referencia como responsável pelas análises das empresas.
+
+Cria 15 jovens, 5 empresas e 25 vagas, além dos registros que já existiam:
+
+- Jovens: 5 sem currículo, 5 com habilidades e 5 com currículo completo.
+- Empresas: 3 aprovadas, 1 pendente e 1 rejeitada com motivo.
+- Vagas: vinculadas às empresas aprovadas, com diferentes áreas, contratos,
+  regimes, tamanhos de descrição, estados abertos/encerrados e prazos futuros/vencidos.
+- A empresa 5 possui CNPJ alfanumérico. Documentos e telefones são sintéticos,
+  validados com Brazilian Utils e persistidos normalizados.
+
+Acesse usando `seed.jovem.1@example.com` até `seed.jovem.15@example.com` ou
+`seed.empresa.1@example.com` até `seed.empresa.5@example.com`. A senha inicial
+dessas contas é `Conecta123!`; a senha do ADMIN permanece a mesma.
+
+IDs e e-mails reservados identificam os registros do seed. Reexecutar o comando
+não duplica registros nem sobrescreve edições, senhas ou estados alterados nos
+testes manuais. Não há limpeza automática de dados. A criação é transacional e
+execuções simultâneas são serializadas. Conflitos com contas externas que usem
+os e-mails reservados interrompem a execução sem alterações parciais.
+
+Os textos usam uma semente fixa do Faker; CPF e CNPJ são gerados pelo Brazilian
+Utils na primeira criação. Os prazos são relativos ao dia da criação e não são
+renovados ao reexecutar. O seed prepara cenários pela camada de persistência;
+não substitui testes dos fluxos de cadastro e validação pela API.
+
+Para testar a idempotência sem popular o banco de desenvolvimento, configure
+`TEST_DATABASE_URL` e execute `pnpm --filter @conecta/database test:seed`.
+O teste usa e remove somente um schema exclusivo.
