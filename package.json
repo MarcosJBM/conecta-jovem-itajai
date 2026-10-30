@@ -24,8 +24,8 @@
     "lint": "turbo lint",
     "test:unit": "turbo test:unit",
     "test:e2e": "turbo test:e2e",
-    "format": "pnpm --filter @conecta/api format",
-    "format:check": "pnpm --filter @conecta/api format:check",
+    "format": "pnpm --filter @conecta/api --filter @conecta/web format",
+    "format:check": "pnpm --filter @conecta/api --filter @conecta/web format:check",
     "lint:fix": "pnpm --filter @conecta/api --filter @conecta/web lint:fix"
   },
   "devDependencies": {

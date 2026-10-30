@@ -12,8 +12,8 @@
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "test:watch": "vitest --config vitest.unit.config.ts",
     "lint": "eslint .",
-    "format": "prettier --write src *.ts *.mjs *.json",
-    "format:check": "prettier --check src *.ts *.mjs *.json",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "pnpm test:unit",
     "admin:create": "tsx --conditions=development scripts/create-admin.ts",
     "lint:fix": "eslint . --fix"
