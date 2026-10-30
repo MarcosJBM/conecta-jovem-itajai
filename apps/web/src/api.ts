@@ -4,11 +4,11 @@ export class ApiError extends Error {
     public status: number,
     public fields: Record<string, string> = {},
   ) {
-    super(message)
+    super(message);
   }
 }
 export async function api(path: string, method = 'GET', body?: unknown) {
-  let response: Response
+  let response: Response;
   try {
     response = await fetch(`/api${path}`, {
       method,
@@ -18,12 +18,12 @@ export async function api(path: string, method = 'GET', body?: unknown) {
         'X-Requested-With': 'Conecta',
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    })
+    });
   } catch {
     throw new ApiError(
       'Não foi possível conectar ao servidor. Tente novamente.',
       0,
-    )
+    );
   }
   const data =
     response.status === 204
@@ -32,18 +32,18 @@ export async function api(path: string, method = 'GET', body?: unknown) {
           throw new ApiError(
             'O servidor retornou uma resposta inválida. Tente novamente.',
             response.status,
-          )
-        })
+          );
+        });
   if (!response.ok)
     throw new ApiError(
       data.message ?? 'Não foi possível concluir a solicitação.',
       response.status,
       data.fields,
-    )
-  return data
+    );
+  return data;
 }
 export type AuthUser = {
-  id: string
-  email: string
-  role: 'YOUTH' | 'COMPANY' | 'ADMIN'
-}
+  id: string;
+  email: string;
+  role: 'YOUTH' | 'COMPANY' | 'ADMIN';
+};

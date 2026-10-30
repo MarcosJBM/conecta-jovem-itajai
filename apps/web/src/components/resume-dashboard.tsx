@@ -1,67 +1,67 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react';
 import {
   Controller,
   FormProvider,
   useFieldArray,
   useForm,
   useWatch,
-} from 'react-hook-form'
-import type { Path } from 'react-hook-form'
-import { api, ApiError } from '../api'
-import type { Education, Experience, ResumeResult } from '../lib/resume'
-import { formatBrazilianField } from '../lib/brazilian-data'
-import { FormInput } from './form-input'
-import { Card } from './ui/card'
-import { Button } from './ui/button'
-import { Checkbox } from './ui/checkbox'
-import { Label } from './ui/label'
-import { Alert, AlertDescription } from './ui/alert'
+} from 'react-hook-form';
+import type { Path } from 'react-hook-form';
+import { api, ApiError } from '../api';
+import type { Education, Experience, ResumeResult } from '../lib/resume';
+import { formatBrazilianField } from '../lib/brazilian-data';
+import { FormInput } from './form-input';
+import { Card } from './ui/card';
+import { Button } from './ui/button';
+import { Checkbox } from './ui/checkbox';
+import { Label } from './ui/label';
+import { Alert, AlertDescription } from './ui/alert';
 
 type Values = {
-  skills: { name: string }[]
-  educations: Education[]
-  experiences: Experience[]
-}
+  skills: { name: string }[];
+  educations: Education[];
+  experiences: Experience[];
+};
 export function ResumeDashboard({ expired }: { expired: () => void }) {
   const form = useForm<Values>({
     mode: 'onSubmit',
     defaultValues: { skills: [], educations: [], experiences: [] },
-  })
-  const skills = useFieldArray({ control: form.control, name: 'skills' })
+  });
+  const skills = useFieldArray({ control: form.control, name: 'skills' });
   const educations = useFieldArray({
     control: form.control,
     name: 'educations',
-  })
+  });
   const experiences = useFieldArray({
     control: form.control,
     name: 'experiences',
-  })
+  });
   const educationValues = useWatch({
     control: form.control,
     name: 'educations',
-  })
+  });
   const experienceValues = useWatch({
     control: form.control,
     name: 'experiences',
-  })
-  const [saved, setSaved] = useState<ResumeResult | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [retry, setRetry] = useState(0)
-  const [notice, setNotice] = useState('')
-  const lock = useRef(false)
+  });
+  const [saved, setSaved] = useState<ResumeResult | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [retry, setRetry] = useState(0);
+  const [notice, setNotice] = useState('');
+  const lock = useRef(false);
   const {
     reset,
     setError,
     clearErrors,
     formState: { errors, isSubmitting },
-  } = form
+  } = form;
   useEffect(() => {
-    let active = true
-    setLoading(true)
+    let active = true;
+    setLoading(true);
     api('/resumes/me')
       .then((data: ResumeResult) => {
-        if (!active) return
-        setSaved(data)
+        if (!active) return;
+        setSaved(data);
         reset({
           skills: data.resume.skills.map((name) => ({ name })),
           educations: data.resume.educations.map((e) => ({
@@ -73,31 +73,31 @@ export function ResumeDashboard({ expired }: { expired: () => void }) {
             endMonth: e.endMonth ?? '',
             description: e.description ?? '',
           })),
-        })
+        });
       })
       .catch((error) => {
-        if (!active) return
-        if (error instanceof ApiError && error.status === 401) expired()
+        if (!active) return;
+        if (error instanceof ApiError && error.status === 401) expired();
         else
           setError('root.server', {
             message:
               error instanceof Error
                 ? error.message
                 : 'Não foi possível carregar o currículo.',
-          })
+          });
       })
       .finally(() => {
-        if (active) setLoading(false)
-      })
+        if (active) setLoading(false);
+      });
     return () => {
-      active = false
-    }
-  }, [retry, reset, setError, expired])
+      active = false;
+    };
+  }, [retry, reset, setError, expired]);
   async function submit(values: Values) {
-    if (lock.current) return
-    lock.current = true
-    clearErrors()
-    setNotice('')
+    if (lock.current) return;
+    lock.current = true;
+    clearErrors();
+    setNotice('');
     try {
       const data: ResumeResult = await api('/resumes/me', 'PUT', {
         skills: (values.skills ?? []).map((s) => s.name),
@@ -110,21 +110,21 @@ export function ResumeDashboard({ expired }: { expired: () => void }) {
           endMonth: e.isCurrent ? null : e.endMonth || null,
           description: e.description || null,
         })),
-      })
-      setSaved(data)
-      setNotice('Currículo salvo com sucesso.')
+      });
+      setSaved(data);
+      setNotice('Currículo salvo com sucesso.');
     } catch (error) {
-      if (error instanceof ApiError && error.status === 401) expired()
+      if (error instanceof ApiError && error.status === 401) expired();
       setError('root.server', {
         message: error instanceof Error ? error.message : 'Falha ao salvar.',
-      })
+      });
       if (error instanceof ApiError)
         for (const [key, message] of Object.entries(error.fields)) {
-          const name = /^skills\.\d+$/.test(key) ? `${key}.name` : key
-          setError(name as Path<Values>, { message }, { shouldFocus: true })
+          const name = /^skills\.\d+$/.test(key) ? `${key}.name` : key;
+          setError(name as Path<Values>, { message }, { shouldFocus: true });
         }
     } finally {
-      lock.current = false
+      lock.current = false;
     }
   }
   if (loading)
@@ -132,7 +132,7 @@ export function ResumeDashboard({ expired }: { expired: () => void }) {
       <Card className="p-6" role="status">
         Carregando currículo…
       </Card>
-    )
+    );
   return (
     <div className="space-y-6">
       {errors.root?.server && (
@@ -143,8 +143,8 @@ export function ResumeDashboard({ expired }: { expired: () => void }) {
       {!saved ? (
         <Button
           onClick={() => {
-            clearErrors()
-            setRetry(retry + 1)
+            clearErrors();
+            setRetry(retry + 1);
           }}
         >
           Tentar novamente
@@ -193,7 +193,7 @@ export function ResumeDashboard({ expired }: { expired: () => void }) {
                         type="button"
                         variant="outline"
                         onClick={() => {
-                          skills.remove(i)
+                          skills.remove(i);
                         }}
                         aria-label={`Remover habilidade ${i + 1}`}
                       >
@@ -258,9 +258,9 @@ export function ResumeDashboard({ expired }: { expired: () => void }) {
                               id={`education-current-${i}`}
                               checked={checkbox.value}
                               onCheckedChange={(value) => {
-                                checkbox.onChange(value === true)
+                                checkbox.onChange(value === true);
                                 if (value)
-                                  form.setValue(`educations.${i}.endMonth`, '')
+                                  form.setValue(`educations.${i}.endMonth`, '');
                               }}
                             />
                             <Label htmlFor={`education-current-${i}`}>
@@ -273,7 +273,7 @@ export function ResumeDashboard({ expired }: { expired: () => void }) {
                         type="button"
                         variant="outline"
                         onClick={() => {
-                          educations.remove(i)
+                          educations.remove(i);
                         }}
                         aria-label={`Remover formação ${i + 1}`}
                       >
@@ -350,9 +350,12 @@ export function ResumeDashboard({ expired }: { expired: () => void }) {
                               id={`experience-current-${i}`}
                               checked={checkbox.value}
                               onCheckedChange={(value) => {
-                                checkbox.onChange(value === true)
+                                checkbox.onChange(value === true);
                                 if (value)
-                                  form.setValue(`experiences.${i}.endMonth`, '')
+                                  form.setValue(
+                                    `experiences.${i}.endMonth`,
+                                    '',
+                                  );
                               }}
                             />
                             <Label htmlFor={`experience-current-${i}`}>
@@ -365,7 +368,7 @@ export function ResumeDashboard({ expired }: { expired: () => void }) {
                         type="button"
                         variant="outline"
                         onClick={() => {
-                          experiences.remove(i)
+                          experiences.remove(i);
                         }}
                         aria-label={`Remover experiência ${i + 1}`}
                       >
@@ -440,5 +443,5 @@ export function ResumeDashboard({ expired }: { expired: () => void }) {
         </>
       )}
     </div>
-  )
+  );
 }

@@ -1,17 +1,17 @@
-import { useFormContext } from 'react-hook-form'
-import { Label } from './ui/label'
-import { Textarea } from './ui/textarea'
+import { useFormContext } from 'react-hook-form';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
 export function FormTextarea({
   name,
   label,
   maxLength,
 }: {
-  name: string
-  label: string
-  maxLength: number
+  name: string;
+  label: string;
+  maxLength: number;
 }) {
-  const { register, getFieldState, formState } = useFormContext()
-  const error = getFieldState(name, formState).error
+  const { register, getFieldState, formState } = useFormContext();
+  const error = getFieldState(name, formState).error;
   return (
     <div className="space-y-2">
       <Label htmlFor={name}>{label}</Label>
@@ -38,5 +38,5 @@ export function FormTextarea({
         </p>
       )}
     </div>
-  )
+  );
 }

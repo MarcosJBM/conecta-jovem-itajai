@@ -1,73 +1,73 @@
-import { useCallback, useEffect, useState } from 'react'
-import { api, ApiError } from './api'
-import type { AuthUser } from './api'
-import { DataForm } from './components/data-form'
-import { CompanyDashboard } from './components/company-dashboard'
-import { ResumeDashboard } from './components/resume-dashboard'
-import { AdminDashboard } from './components/admin-dashboard'
-import { credentials, companyFields, youthFields } from './forms'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useCallback, useEffect, useState } from 'react';
+import { api, ApiError } from './api';
+import type { AuthUser } from './api';
+import { DataForm } from './components/data-form';
+import { CompanyDashboard } from './components/company-dashboard';
+import { ResumeDashboard } from './components/resume-dashboard';
+import { AdminDashboard } from './components/admin-dashboard';
+import { credentials, companyFields, youthFields } from './forms';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 function App() {
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [sessionError, setSessionError] = useState('')
-  const [page, setPage] = useState(window.location.hash.slice(1) || '/login')
-  const [notice, setNotice] = useState('')
-  const [loggingOut, setLoggingOut] = useState(false)
-  const [retry, setRetry] = useState(0)
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [sessionError, setSessionError] = useState('');
+  const [page, setPage] = useState(window.location.hash.slice(1) || '/login');
+  const [notice, setNotice] = useState('');
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [retry, setRetry] = useState(0);
   function navigate(path: string) {
-    window.location.hash = path
-    setPage(path)
+    window.location.hash = path;
+    setPage(path);
   }
   const expired = useCallback(() => {
-    setUser(null)
-    setNotice('Sua sessão expirou. Entre novamente.')
-    window.location.hash = '/login'
-    setPage('/login')
-  }, [])
+    setUser(null);
+    setNotice('Sua sessão expirou. Entre novamente.');
+    window.location.hash = '/login';
+    setPage('/login');
+  }, []);
   useEffect(() => {
-    const update = () => setPage(window.location.hash.slice(1) || '/login')
-    window.addEventListener('hashchange', update)
-    return () => window.removeEventListener('hashchange', update)
-  }, [])
+    const update = () => setPage(window.location.hash.slice(1) || '/login');
+    window.addEventListener('hashchange', update);
+    return () => window.removeEventListener('hashchange', update);
+  }, []);
   useEffect(() => {
-    let active = true
+    let active = true;
     api('/auth/me')
       .then((data) => {
         if (active) {
-          setUser(data.user)
-          setSessionError('')
+          setUser(data.user);
+          setSessionError('');
         }
       })
       .catch((error) => {
-        if (!active) return
+        if (!active) return;
         if (error instanceof ApiError && error.status === 401) {
-          setUser(null)
-          setSessionError('')
+          setUser(null);
+          setSessionError('');
         } else
           setSessionError(
             'Não foi possível verificar sua sessão. Confira sua conexão.',
-          )
+          );
       })
       .finally(() => {
-        if (active) setLoading(false)
-      })
+        if (active) setLoading(false);
+      });
     return () => {
-      active = false
-    }
-  }, [retry])
+      active = false;
+    };
+  }, [retry]);
   async function registerCompany(data: Record<string, string>) {
-    await api('/companies', 'POST', data)
+    await api('/companies', 'POST', data);
     setNotice(
       'Conta criada! O cadastro da empresa está em validação. Entre para acompanhar a situação.',
-    )
-    navigate('/login')
+    );
+    navigate('/login');
   }
   async function registerYouth(data: Record<string, string>) {
-    const { email, password, acceptedTerms, ...profile } = data
+    const { email, password, acceptedTerms, ...profile } = data;
     try {
       await api('/users', 'POST', {
         email,
@@ -75,7 +75,7 @@ function App() {
         role: 'YOUTH',
         acceptedTerms: acceptedTerms === 'on',
         youthProfile: profile,
-      })
+      });
     } catch (error) {
       if (error instanceof ApiError)
         error.fields = Object.fromEntries(
@@ -83,23 +83,23 @@ function App() {
             key.replace(/^youthProfile\./, ''),
             value,
           ]),
-        )
-      throw error
+        );
+      throw error;
     }
-    setNotice('Conta criada com sucesso. Entre para acessar a plataforma.')
-    navigate('/login')
+    setNotice('Conta criada com sucesso. Entre para acessar a plataforma.');
+    navigate('/login');
   }
   async function logout() {
-    setLoggingOut(true)
+    setLoggingOut(true);
     try {
-      await api('/auth/logout', 'POST')
-      setUser(null)
-      setNotice('Você saiu da sua conta.')
-      navigate('/login')
+      await api('/auth/logout', 'POST');
+      setUser(null);
+      setNotice('Você saiu da sua conta.');
+      navigate('/login');
     } catch {
-      setNotice('Não foi possível sair. Tente novamente.')
+      setNotice('Não foi possível sair. Tente novamente.');
     } finally {
-      setLoggingOut(false)
+      setLoggingOut(false);
     }
   }
   return (
@@ -133,8 +133,8 @@ function App() {
           <p>{sessionError}</p>
           <Button
             onClick={() => {
-              setLoading(true)
-              setRetry(retry + 1)
+              setLoading(true);
+              setRetry(retry + 1);
             }}
           >
             Tentar novamente
@@ -224,10 +224,10 @@ function App() {
             login
             action="Entrar"
             onSubmit={async (data) => {
-              const result = await api('/auth/login', 'POST', data)
-              setUser(result.user)
-              setNotice('')
-              navigate('/inicio')
+              const result = await api('/auth/login', 'POST', data);
+              setUser(result.user);
+              setNotice('');
+              navigate('/inicio');
             }}
           />
           <p className="p-3 text-center [&_a]:underline [&_a]:underline-offset-4">
@@ -235,10 +235,11 @@ function App() {
           </p>
         </>
       )}
+
       <footer className="pt-8 pb-2 text-center text-xs text-muted-foreground">
         Conecta Jovem Itajaí · Aproximando empresas e oportunidades
       </footer>
     </main>
-  )
+  );
 }
-export default App
+export default App;

@@ -1,6 +1,6 @@
-import { useFormContext } from 'react-hook-form'
-import { Input } from './ui/input'
-import { Label } from './ui/label'
+import { useFormContext } from 'react-hook-form';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 
 export function FormInput({
   name,
@@ -12,17 +12,17 @@ export function FormInput({
   minMonth,
   minDate,
 }: {
-  name: string
-  label: string
-  type?: string
-  required?: boolean
-  maxLength?: number
-  disabled?: boolean
-  minMonth?: string
-  minDate?: string
+  name: string;
+  label: string;
+  type?: string;
+  required?: boolean;
+  maxLength?: number;
+  disabled?: boolean;
+  minMonth?: string;
+  minDate?: string;
 }) {
-  const { register, getFieldState, formState } = useFormContext()
-  const error = getFieldState(name, formState).error
+  const { register, getFieldState, formState } = useFormContext();
+  const error = getFieldState(name, formState).error;
   return (
     <div className="min-w-0 space-y-2">
       <Label htmlFor={name}>
@@ -38,18 +38,18 @@ export function FormInput({
         aria-describedby={error ? `${name}-error` : undefined}
         {...register(name, {
           validate: (value) => {
-            if (disabled) return true
-            if (!value?.trim()) return !required || 'Campo obrigatório.'
+            if (disabled) return true;
+            if (!value?.trim()) return !required || 'Campo obrigatório.';
             if (
               type === 'month' &&
               !/^(?!0000)\d{4}-(0[1-9]|1[0-2])$/.test(value)
             )
-              return 'Informe um mês válido.'
+              return 'Informe um mês válido.';
             if (minMonth && value < minMonth)
-              return 'O término deve ser igual ou posterior ao início.'
+              return 'O término deve ser igual ou posterior ao início.';
             if (minDate && value < minDate)
-              return 'Informe um prazo a partir de hoje.'
-            return true
+              return 'Informe um prazo a partir de hoje.';
+            return true;
           },
           maxLength: maxLength
             ? { value: maxLength, message: `Use até ${maxLength} caracteres.` }
@@ -66,5 +66,5 @@ export function FormInput({
         </p>
       )}
     </div>
-  )
+  );
 }
