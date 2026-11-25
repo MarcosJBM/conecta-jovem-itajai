@@ -10,14 +10,14 @@ Situação desta entrega: implementada e testada na branch; revisão e integraç
 
 ## Entrega e rastreabilidade
 
-| Referência | Evidência implementada |
-| --- | --- |
-| US03 / RF03 / UC03 | Modelo `Resume` associado ao perfil de jovem, com coleções de habilidades, formações e experiências; nenhum dado cadastral duplicado. |
-| RN02 refinada | `getResumeCompleteness` exige dados cadastrais obrigatórios e ao menos uma habilidade; formação, experiência e complemento opcionais. Retorna campos pendentes. |
-| Currículo incompleto | Coleções vazias são permitidas; validação de conteúdo e cálculo de completude são separados. Não exige PDF ou upload. |
-| Integridade | Um currículo por jovem, chaves estrangeiras e exclusão em cascata; nomes obrigatórios e períodos mensais coerentes em domínio e constraints SQL. |
-| Privacidade | Projeção explícita com nome, cidade/UF, celular e dados profissionais; sem CPF, nascimento ou endereço completo. |
-| Compatibilidade | Migration aditiva; preserva perfis antigos e não cria informações fictícias. Lista de campos obrigatórios é compartilhada com a validação cadastral existente. |
+| Referência           | Evidência implementada                                                                                                                                          |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| US03 / RF03 / UC03   | Modelo `Resume` associado ao perfil de jovem, com coleções de habilidades, formações e experiências; nenhum dado cadastral duplicado.                           |
+| RN02 refinada        | `getResumeCompleteness` exige dados cadastrais obrigatórios e ao menos uma habilidade; formação, experiência e complemento opcionais. Retorna campos pendentes. |
+| Currículo incompleto | Coleções vazias são permitidas; validação de conteúdo e cálculo de completude são separados. Não exige PDF ou upload.                                           |
+| Integridade          | Um currículo por jovem, chaves estrangeiras e exclusão em cascata; nomes obrigatórios e períodos mensais coerentes em domínio e constraints SQL.                |
+| Privacidade          | Projeção explícita com nome, cidade/UF, celular e dados profissionais; sem CPF, nascimento ou endereço completo.                                                |
+| Compatibilidade      | Migration aditiva; preserva perfis antigos e não cria informações fictícias. Lista de campos obrigatórios é compartilhada com a validação cadastral existente.  |
 
 Formação inclui instituição, curso, nível e início/fim ou indicação de andamento. Experiência inclui cargo, organização, início/fim ou atividade atual e descrição opcional. Períodos usam `YYYY-MM`. O fim pode ser igual ao início; atividades em andamento não recebem fim. Habilidades são nomes com até 100 caracteres; entradas vazias e nomes duplicados após remoção de espaços nas extremidades e comparação sem distinção de maiúsculas são rejeitados pelo domínio.
 
@@ -25,15 +25,15 @@ O vínculo e as exclusões por proprietário foram verificados no banco. A autor
 
 ## Verificações realizadas
 
-| Verificação | Resultado em 21/10/2026 |
-| --- | --- |
-| Testes unitários da API (`test:unit`) | 115 testes aprovados em 10 arquivos, incluindo as regras de currículo. |
-| Regressão E2E da API (`test:e2e`) | 18 testes aprovados em 2 arquivos; migrations reais aplicadas pelo fluxo existente. |
-| Persistência e migration (`test:resume`) | 7 testes aprovados: teste principal e 6 subtestes. |
-| Typecheck da API e build do banco/API | Aprovados. |
-| ESLint da API e Prettier | Aprovados. |
-| Validação do schema Prisma | Aprovada. |
-| Verificação de whitespace do diff | Aprovada. |
+| Verificação                              | Resultado em 21/10/2026                                                             |
+| ---------------------------------------- | ----------------------------------------------------------------------------------- |
+| Testes unitários da API (`test:unit`)    | 115 testes aprovados em 10 arquivos, incluindo as regras de currículo.              |
+| Regressão E2E da API (`test:e2e`)        | 18 testes aprovados em 2 arquivos; migrations reais aplicadas pelo fluxo existente. |
+| Persistência e migration (`test:resume`) | 7 testes aprovados: teste principal e 6 subtestes.                                  |
+| Typecheck da API e build do banco/API    | Aprovados.                                                                          |
+| ESLint da API e Prettier                 | Aprovados.                                                                          |
+| Validação do schema Prisma               | Aprovada.                                                                           |
+| Verificação de whitespace do diff        | Aprovada.                                                                           |
 
 O teste de persistência aplica todas as migrations anteriores em schema exclusivo, insere dois perfis no formato antigo (incluindo campos nulos), aplica a nova migration e compara os registros anteriores/depois. Em seguida verifica rascunho vazio, unicidade de currículo, referências inexistentes, rollback de escrita aninhada inválida, dados obrigatórios, cronologia, alterações/exclusões e preservação dos dados do outro jovem.
 

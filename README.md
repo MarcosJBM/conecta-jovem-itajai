@@ -541,19 +541,19 @@ abre os dados e aprova ou rejeita com motivo obrigatório. A empresa rejeitada
 corrige e reenvia pela mesma conta; após aprovação, cria vagas diretamente
 pelo formulário, consulta suas vagas, edita as abertas e as encerra.
 
-| Método | Rota | Permissão e resultado |
-| --- | --- | --- |
-| GET | `/resumes/me` | YOUTH; currículo salvo ou vazio, completude e pendências |
-| PUT | `/resumes/me` | YOUTH; substituição atômica das coleções profissionais |
-| GET | `/admin/company-validations?page=1&pageSize=10` | ADMIN; solicitações pendentes paginadas |
-| GET | `/admin/company-validations/:id` | ADMIN; dados para análise manual |
-| POST | `/admin/company-validations/:id/decision` | ADMIN; aprovação/rejeição de solicitação pendente |
-| GET | `/companies/me/jobs/options` | COMPANY; catálogo de contratação/regime/área e data atual em Brasília |
-| GET | `/companies/me/jobs?page=1&pageSize=10` | COMPANY; somente as próprias vagas, inclusive vencidas/encerradas |
-| GET | `/companies/me/jobs/:id` | COMPANY; detalhes de vaga própria |
-| POST | `/companies/me/jobs` | COMPANY aprovada; cria vaga já aberta, resposta 201 |
-| PUT | `/companies/me/jobs/:id` | COMPANY aprovada; substitui dados de vaga própria aberta |
-| POST | `/companies/me/jobs/:id/close` | COMPANY aprovada; encerra vaga própria aberta |
+| Método | Rota                                            | Permissão e resultado                                                 |
+| ------ | ----------------------------------------------- | --------------------------------------------------------------------- |
+| GET    | `/resumes/me`                                   | YOUTH; currículo salvo ou vazio, completude e pendências              |
+| PUT    | `/resumes/me`                                   | YOUTH; substituição atômica das coleções profissionais                |
+| GET    | `/admin/company-validations?page=1&pageSize=10` | ADMIN; solicitações pendentes paginadas                               |
+| GET    | `/admin/company-validations/:id`                | ADMIN; dados para análise manual                                      |
+| POST   | `/admin/company-validations/:id/decision`       | ADMIN; aprovação/rejeição de solicitação pendente                     |
+| GET    | `/companies/me/jobs/options`                    | COMPANY; catálogo de contratação/regime/área e data atual em Brasília |
+| GET    | `/companies/me/jobs?page=1&pageSize=10`         | COMPANY; somente as próprias vagas, inclusive vencidas/encerradas     |
+| GET    | `/companies/me/jobs/:id`                        | COMPANY; detalhes de vaga própria                                     |
+| POST   | `/companies/me/jobs`                            | COMPANY aprovada; cria vaga já aberta, resposta 201                   |
+| PUT    | `/companies/me/jobs/:id`                        | COMPANY aprovada; substitui dados de vaga própria aberta              |
+| POST   | `/companies/me/jobs/:id/close`                  | COMPANY aprovada; encerra vaga própria aberta                         |
 
 Todas essas rotas exigem sessão; escritas também exigem as proteções de
 origem já adotadas. IDs de proprietário, status, responsável administrativo
