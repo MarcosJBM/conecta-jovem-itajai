@@ -3,7 +3,7 @@ import type {
   JobSearchFilters,
 } from '../repositories/jobs-repository.js';
 import type { Pagination } from '../domain/types/pagination.js';
-import { jobOptions } from '../domain/job.js';
+import { jobOptions, presentPublicJob } from '../domain/job.js';
 import { validatePagination } from './validate-pagination.js';
 import { ForbiddenError } from './errors/forbidden-error.js';
 import type { AuthUser } from '../domain/types/auth.js';
@@ -22,31 +22,7 @@ export class SearchPublicJobsUseCase {
     const now = this.clock();
     const result = await this.jobs.findPublicMany(filters, pagination, now);
     return {
-      items: result.items.map(
-        ({
-          id,
-          title,
-          description,
-          city,
-          state,
-          area,
-          contract,
-          regime,
-          companyName,
-          deadline,
-        }) => ({
-          id,
-          title,
-          description,
-          city,
-          state,
-          area,
-          contract,
-          regime,
-          companyName,
-          deadline: deadline.toISOString().slice(0, 10),
-        }),
-      ),
+      items: result.items.map(presentPublicJob),
       options: jobOptions,
       total: result.total,
       ...pagination,

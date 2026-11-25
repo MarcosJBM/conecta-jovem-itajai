@@ -36,3 +36,6 @@ export function jobValues(job: Job): JobValues {
     Object.keys(emptyJob).map((key) => [key, job[key as keyof JobValues]]),
   ) as JobValues;
 }
+
+export type PublicJob = Omit<Job, 'status'> & { companyName: string };
+export type PublicJobSummary = Omit<PublicJob, 'requirements' | 'availability'>;

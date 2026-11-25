@@ -40,6 +40,14 @@ export class InMemoryJobsRepository implements JobsRepository {
         null,
     );
   }
+  async findPublicById(id: string) {
+    const job = this.jobs.find((job) => job.id === id);
+    if (!job) return null;
+    const company = [...this.companies.values()].find(
+      ({ id }) => id === job.companyId,
+    );
+    return structuredClone({ ...job, companyName: company?.name || 'Empresa' });
+  }
   async findMany(companyId: string, { page, pageSize }: Pagination) {
     const items = this.jobs
       .filter((job) => job.companyId === companyId)
@@ -85,12 +93,10 @@ export class InMemoryJobsRepository implements JobsRepository {
     );
     return {
       items: structuredClone(
-        items
-          .slice((page - 1) * pageSize, page * pageSize)
-          .map((job) => ({
-            ...job,
-            companyName: names.get(job.companyId) || 'Empresa',
-          })),
+        items.slice((page - 1) * pageSize, page * pageSize).map((job) => ({
+          ...job,
+          companyName: names.get(job.companyId) || 'Empresa',
+        })),
       ),
       total: items.length,
     };
