@@ -1,10 +1,14 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { requireSession } from '../../middlewares/auth.js';
+import {
+  requireSession,
+  requireSameOriginWrite,
+} from '../../middlewares/auth.js';
 import { idSchema, paginationSchema } from '../users/schemas.js';
 import { jobAreas, jobContracts, workRegimes } from '../../../domain/job.js';
 import { makeSearchPublicJobsUseCase } from '../../../use-cases/factories/make-search-public-jobs.js';
 import { makeGetPublicJobUseCase } from '../../../use-cases/factories/make-get-public-job.js';
+import { makeSubmitJobApplicationUseCase } from '../../../use-cases/factories/make-submit-job-application.js';
 
 const searchSchema = paginationSchema.extend({
   keyword: z.string().trim().max(100).optional(),
@@ -30,3 +34,15 @@ publicJobsRoutes.get('/:id', async (request, response) => {
   const { id } = idSchema.parse(request.params);
   response.json(await makeGetPublicJobUseCase().execute(request.auth!, id));
 });
+
+publicJobsRoutes.post(
+  '/:id/applications',
+  requireSameOriginWrite,
+  async (request, response) => {
+    const { id } = idSchema.parse(request.params);
+    z.strictObject({}).parse(request.body ?? {});
+    response
+      .status(201)
+      .json(await makeSubmitJobApplicationUseCase().execute(request.auth!, id));
+  },
+);
