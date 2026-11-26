@@ -9,6 +9,7 @@ import { FormInput } from './form-input';
 import { FormTextarea } from './form-textarea';
 import { FormSelect } from './form-select';
 import { CloseJobAction } from './close-job-action';
+import { CompanyApplicants } from './company-applicants';
 import { Pagination } from './pagination';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -29,6 +30,10 @@ export function JobsDashboard({ expired }: { expired: () => void }) {
     totalPages: number;
   }>({ items: [], total: 0, totalPages: 0 });
   const [options, setOptions] = useState<JobOptions | null>(null);
+  const [applicantsJob, setApplicantsJob] = useState<Pick<
+    Job,
+    'id' | 'title'
+  > | null>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [detail, setDetail] = useState<Job | null>(null);
   const [page, setPage] = useState(1);
@@ -140,6 +145,15 @@ export function JobsDashboard({ expired }: { expired: () => void }) {
     EXPIRED: 'Prazo encerrado',
     CLOSED: 'Encerrada',
   };
+  if (applicantsJob)
+    return (
+      <CompanyApplicants
+        job={applicantsJob}
+        expired={expired}
+        back={() => setApplicantsJob(null)}
+      />
+    );
+
   return (
     <div className="space-y-6">
       <Card className="gap-4 p-6">
@@ -212,6 +226,14 @@ export function JobsDashboard({ expired }: { expired: () => void }) {
                   }}
                 >
                   Ver detalhes
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={isSubmitting}
+                  aria-label={`Ver candidaturas para ${job.title}`}
+                  onClick={() => setApplicantsJob(job)}
+                >
+                  Ver candidaturas
                 </Button>
                 {job.availability === 'OPEN' && (
                   <>
