@@ -1,8 +1,22 @@
 import type { JobsRepository, JobSearchFilters } from '../jobs-repository.js';
-import type { JobData } from '../../domain/job.js';
+import type { JobData, PublicJob } from '../../domain/job.js';
 import { brazilianDate } from '../../domain/job.js';
 import type { Pagination } from '../../domain/types/pagination.js';
 import { getDatabaseClient } from '../../libs/prisma.js';
+const publicCompany = { select: { tradeName: true, legalName: true } } as const;
+
+function withPublicCompanyName({
+  company,
+  ...job
+}: Omit<PublicJob, 'companyName'> & {
+  company: { tradeName: string | null; legalName: string | null };
+}): PublicJob {
+  return {
+    ...job,
+    companyName: company.tradeName || company.legalName || 'Empresa',
+  };
+}
+
 export class PrismaJobsRepository implements JobsRepository {
   constructor(private prisma = getDatabaseClient()) {}
   async findCompany(userId: string) {
@@ -16,6 +30,13 @@ export class PrismaJobsRepository implements JobsRepository {
   }
   async findById(companyId: string, id: string) {
     return this.prisma.job.findFirst({ where: { id, companyId } });
+  }
+  async findPublicById(id: string) {
+    const job = await this.prisma.job.findUnique({
+      where: { id },
+      include: { company: publicCompany },
+    });
+    return job ? withPublicCompanyName(job) : null;
   }
   async findMany(companyId: string, { page, pageSize }: Pagination) {
     const [items, total] = await this.prisma.$transaction(
@@ -64,19 +85,14 @@ export class PrismaJobsRepository implements JobsRepository {
           skip: (page - 1) * pageSize,
           take: pageSize,
           orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-          include: {
-            company: { select: { tradeName: true, legalName: true } },
-          },
+          include: { company: publicCompany },
         }),
         this.prisma.job.count({ where }),
       ],
       { isolationLevel: 'RepeatableRead' },
     );
     return {
-      items: items.map(({ company, ...job }) => ({
-        ...job,
-        companyName: company.tradeName || company.legalName || 'Empresa',
-      })),
+      items: items.map(withPublicCompanyName),
       total,
     };
   }

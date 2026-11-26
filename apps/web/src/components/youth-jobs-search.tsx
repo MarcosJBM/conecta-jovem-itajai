@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { api, ApiError } from '../api';
-import type { Job, JobOptions } from '../lib/job';
+import type { JobOptions, PublicJobSummary } from '../lib/job';
 import { Alert, AlertDescription } from './ui/alert';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -9,6 +9,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { NativeSelect, NativeSelectOption } from './ui/native-select';
 import { Pagination } from './pagination';
+import { YouthJobDetails } from './youth-job-details';
 
 const emptyFilters = {
   keyword: '',
@@ -19,9 +20,7 @@ const emptyFilters = {
 };
 type Filters = typeof emptyFilters;
 type SearchResult = {
-  items: (Omit<Job, 'requirements' | 'status' | 'availability'> & {
-    companyName: string;
-  })[];
+  items: PublicJobSummary[];
   options: Omit<JobOptions, 'today'>;
   total: number;
   totalPages: number;
@@ -38,6 +37,8 @@ export function YouthJobsSearch({ expired }: { expired: () => void }) {
   } = useForm<Filters>({ defaultValues: emptyFilters });
   const [search, setSearch] = useState({ page: 1, filters: emptyFilters });
   const [result, setResult] = useState<SearchResult | null>(null);
+  const [selectedJob, setSelectedJob] = useState<string | null>(null);
+  const detailsTrigger = useRef<HTMLButtonElement>(null);
   const [loadedSearch, setLoadedSearch] = useState<typeof search | null>(null);
 
   useEffect(() => {
@@ -73,6 +74,10 @@ export function YouthJobsSearch({ expired }: { expired: () => void }) {
     };
   }, [clearErrors, expired, search, setError]);
 
+  useEffect(() => {
+    if (!selectedJob) detailsTrigger.current?.focus();
+  }, [selectedJob]);
+
   const selectFields = [
     { name: 'area', label: 'Área', options: result?.options.areas },
     {
@@ -94,103 +99,132 @@ export function YouthJobsSearch({ expired }: { expired: () => void }) {
   );
 
   return (
-    <section className="mt-10 space-y-5" aria-labelledby="jobs-heading">
-      <h2 id="jobs-heading" className="text-2xl font-bold">
-        Vagas abertas
-      </h2>
-      <Card className="p-5">
-        <form
-          className="grid gap-4 sm:grid-cols-2"
-          onSubmit={handleSubmit((filters) => setSearch({ page: 1, filters }))}
-        >
-          <div className="space-y-2">
-            <Label htmlFor="jobs-keyword">Palavra-chave</Label>
-            <Input
-              id="jobs-keyword"
-              type="search"
-              maxLength={100}
-              {...register('keyword')}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="jobs-city">Cidade</Label>
-            <Input id="jobs-city" maxLength={100} {...register('city')} />
-          </div>
-          {selectFields.map(({ name, label, options }) => (
-            <div key={name} className="space-y-2">
-              <Label htmlFor={`jobs-${name}`}>{label}</Label>
-              <NativeSelect
-                id={`jobs-${name}`}
-                disabled={!options}
-                {...register(name)}
-              >
-                <NativeSelectOption value="">Todos</NativeSelectOption>
-                {options?.map((option) => (
-                  <NativeSelectOption key={option.value} value={option.value}>
-                    {option.label}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
+    <>
+      {selectedJob && (
+        <YouthJobDetails
+          key={selectedJob}
+          id={selectedJob}
+          labels={labels}
+          expired={expired}
+          back={() => setSelectedJob(null)}
+        />
+      )}
+      <section
+        hidden={Boolean(selectedJob)}
+        className="mt-10 space-y-5"
+        aria-labelledby="jobs-heading"
+      >
+        <h2 id="jobs-heading" className="text-2xl font-bold">
+          Vagas abertas
+        </h2>
+        <Card className="p-5">
+          <form
+            className="grid gap-4 sm:grid-cols-2"
+            onSubmit={handleSubmit((filters) =>
+              setSearch({ page: 1, filters }),
+            )}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="jobs-keyword">Palavra-chave</Label>
+              <Input
+                id="jobs-keyword"
+                type="search"
+                maxLength={100}
+                {...register('keyword')}
+              />
             </div>
-          ))}
-          <div className="flex flex-wrap gap-2 self-end">
-            <Button type="submit">Buscar vagas</Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                reset();
-                setSearch({ page: 1, filters: emptyFilters });
-              }}
-            >
-              Limpar filtros
-            </Button>
-          </div>
-        </form>
-      </Card>
-      {loading && <p role="status">Buscando vagas…</p>}
-      {!loading && errors.root?.server && (
-        <Alert variant="destructive">
-          <AlertDescription>{errors.root.server.message}</AlertDescription>
-        </Alert>
-      )}
-      {!loading && !errors.root?.server && result && (
-        <>
-          <p role="status" className="text-sm text-muted-foreground">
-            {result.total === 1
-              ? '1 vaga encontrada'
-              : `${result.total} vagas encontradas`}
-          </p>
-          {result.items.map((job) => (
-            <Card key={job.id} className="space-y-2 p-5">
-              <h3 className="text-lg font-semibold">{job.title}</h3>
-              <p>
-                {job.companyName} · {job.city}/{job.state}
-              </p>
-              <p>
-                {[job.area, job.contract, job.regime]
-                  .map((value) => labels.get(value))
-                  .join(' · ')}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Prazo até{' '}
-                <time dateTime={job.deadline}>
-                  {job.deadline.split('-').reverse().join('/')}
-                </time>
-              </p>
-              <p className="line-clamp-3">{job.description}</p>
-            </Card>
-          ))}
-          {(result.totalPages > 1 || search.page > 1) && (
-            <Pagination
-              page={search.page}
-              totalPages={Math.max(search.page, result.totalPages)}
-              loading={loading}
-              change={(page) => setSearch({ ...search, page })}
-            />
-          )}
-        </>
-      )}
-    </section>
+            <div className="space-y-2">
+              <Label htmlFor="jobs-city">Cidade</Label>
+              <Input id="jobs-city" maxLength={100} {...register('city')} />
+            </div>
+            {selectFields.map(({ name, label, options }) => (
+              <div key={name} className="space-y-2">
+                <Label htmlFor={`jobs-${name}`}>{label}</Label>
+                <NativeSelect
+                  id={`jobs-${name}`}
+                  disabled={!options}
+                  {...register(name)}
+                >
+                  <NativeSelectOption value="">Todos</NativeSelectOption>
+                  {options?.map((option) => (
+                    <NativeSelectOption key={option.value} value={option.value}>
+                      {option.label}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </div>
+            ))}
+            <div className="flex flex-wrap gap-2 self-end">
+              <Button type="submit">Buscar vagas</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  reset();
+                  setSearch({ page: 1, filters: emptyFilters });
+                }}
+              >
+                Limpar filtros
+              </Button>
+            </div>
+          </form>
+        </Card>
+        {loading && <p role="status">Buscando vagas…</p>}
+        {!loading && errors.root?.server && (
+          <Alert variant="destructive">
+            <AlertDescription>{errors.root.server.message}</AlertDescription>
+          </Alert>
+        )}
+        {!loading && !errors.root?.server && result && (
+          <>
+            <p role="status" className="text-sm text-muted-foreground">
+              {result.total === 1
+                ? '1 vaga encontrada'
+                : `${result.total} vagas encontradas`}
+            </p>
+            {result.items.map((job) => (
+              <Card key={job.id} className="space-y-2 p-5">
+                <h3 className="text-lg font-semibold">{job.title}</h3>
+                <p>
+                  {job.companyName} · {job.city}/{job.state}
+                </p>
+                <p>
+                  {[job.area, job.contract, job.regime]
+                    .map((value) => labels.get(value))
+                    .join(' · ')}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Prazo até{' '}
+                  <time dateTime={job.deadline}>
+                    {job.deadline.split('-').reverse().join('/')}
+                  </time>
+                </p>
+                <p className="line-clamp-3">{job.description}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="self-start"
+                  aria-label={`Ver detalhes de ${job.title}`}
+                  onClick={(event) => {
+                    detailsTrigger.current = event.currentTarget;
+                    setSelectedJob(job.id);
+                  }}
+                >
+                  Ver detalhes
+                </Button>
+              </Card>
+            ))}
+            {(result.totalPages > 1 || search.page > 1) && (
+              <Pagination
+                page={search.page}
+                totalPages={Math.max(search.page, result.totalPages)}
+                loading={loading}
+                change={(page) => setSearch({ ...search, page })}
+              />
+            )}
+          </>
+        )}
+      </section>
+    </>
   );
 }

@@ -1,10 +1,9 @@
-import type { Job, JobData } from '../domain/job.js';
+import type { Job, JobData, PublicJob } from '../domain/job.js';
 import type { Pagination } from '../domain/types/pagination.js';
 export interface CompanyAccess {
   id: string;
   approved: boolean;
 }
-export type PublicJob = Job & { companyName: string };
 
 export interface JobsRepository {
   findCompany(userId: string): Promise<CompanyAccess | null>;
@@ -17,6 +16,7 @@ export interface JobsRepository {
     pagination: Pagination,
     now: Date,
   ): Promise<{ items: PublicJob[]; total: number }>;
+  findPublicById(id: string): Promise<PublicJob | null>;
   findById(companyId: string, id: string): Promise<Job | null>;
   create(companyId: string, data: JobData): Promise<Job | null>;
   update(
