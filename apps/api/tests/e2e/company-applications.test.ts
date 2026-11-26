@@ -98,5 +98,91 @@ test('company sees its own candidates and the submitted resume even after closin
   expect((await owner.get(detail)).body.application).toEqual({
     ...receipt,
     resumeSnapshot: before,
+    status: 'RECEIVED',
+    nextStatuses: ['IN_REVIEW'],
   });
 });
+
+test.each(['APPROVED', 'REJECTED'] as const)(
+  'records each permitted transition through %s and preserves previous events',
+  async (decision) => {
+    const {
+      app,
+      prisma,
+      company,
+      owner,
+      foreign,
+      youth,
+      detail,
+      job,
+      receipt,
+    } = await setup();
+    const url = `${detail}/status`;
+    const change = (status: string) =>
+      owner.patch(url).set('X-Requested-With', 'Conecta').send({ status });
+    expect((await request(app).patch(url)).status).toBe(401);
+    expect(
+      (
+        await youth
+          .patch(url)
+          .set('X-Requested-With', 'Conecta')
+          .send({ status: 'IN_REVIEW' })
+      ).status,
+    ).toBe(403);
+    expect((await owner.patch(url).send({ status: 'IN_REVIEW' })).status).toBe(
+      403,
+    );
+    expect(
+      (
+        await foreign
+          .patch(url)
+          .set('X-Requested-With', 'Conecta')
+          .send({ status: 'IN_REVIEW' })
+      ).status,
+    ).toBe(404);
+    expect((await change('UNKNOWN')).status).toBe(400);
+    expect((await change(decision)).status).toBe(409);
+    expect(await prisma.jobApplicationStatusChange.count()).toBe(0);
+
+    await prisma.job.update({
+      where: { id: job.id },
+      data: { status: 'CLOSED' },
+    });
+    const review = await change('IN_REVIEW');
+    expect(review.status).toBe(200);
+    expect(review.body).toEqual({
+      status: 'IN_REVIEW',
+      nextStatuses: ['APPROVED', 'REJECTED'],
+    });
+    expect((await change('RECEIVED')).status).toBe(409);
+    expect((await change(decision)).body).toEqual({
+      status: decision,
+      nextStatuses: [],
+    });
+    expect((await change('IN_REVIEW')).status).toBe(409);
+    expect((await owner.get(detail)).body.application).toMatchObject({
+      status: decision,
+      nextStatuses: [],
+    });
+    const history = await prisma.jobApplicationStatusChange.findMany({
+      where: { applicationId: receipt.id },
+    });
+    expect(history).toHaveLength(2);
+    expect(history).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          previousStatus: 'RECEIVED',
+          newStatus: 'IN_REVIEW',
+          companyId: company.companyProfile!.id,
+          changedAt: expect.any(Date),
+        }),
+        expect.objectContaining({
+          previousStatus: 'IN_REVIEW',
+          newStatus: decision,
+          companyId: company.companyProfile!.id,
+          changedAt: expect.any(Date),
+        }),
+      ]),
+    );
+  },
+);

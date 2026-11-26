@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+  applicationTransitions,
+  type ApplicationStatus,
+} from '../domain/job-application.js';
+import { ConflictError } from './errors/conflict-error.js';
 import type { AuthUser } from '../domain/types/auth.js';
 import type { Pagination } from '../domain/types/pagination.js';
 import type { JobsRepository } from '../repositories/jobs-repository.js';
@@ -53,6 +58,40 @@ export class CompanyApplicationsUseCase {
     );
     if (!application)
       throw new ResourceNotFoundError('Candidatura não encontrada.');
-    return { application };
+    return {
+      application: {
+        ...application,
+        nextStatuses: applicationTransitions[application.status],
+      },
+    };
+  }
+
+  async changeStatus(
+    user: AuthUser,
+    jobId: string,
+    id: string,
+    status: ApplicationStatus,
+  ) {
+    const company = await requireCompanyAccess(this.jobs, user);
+    const application = await this.applications.findCompanyApplication(
+      company.id,
+      jobId,
+      id,
+    );
+    if (!application)
+      throw new ResourceNotFoundError('Candidatura não encontrada.');
+
+    if (
+      !applicationTransitions[application.status].includes(status) ||
+      !(await this.applications.changeStatus(
+        company.id,
+        jobId,
+        id,
+        application.status,
+        status,
+      ))
+    )
+      throw new ConflictError('A mudança de status não é permitida.');
+    return { status, nextStatuses: applicationTransitions[status] };
   }
 }

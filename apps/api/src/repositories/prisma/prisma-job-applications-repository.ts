@@ -1,3 +1,4 @@
+import type { ApplicationStatus } from '../../domain/job-application.js';
 import type { Pagination } from '../../domain/types/pagination.js';
 import { toResumeView } from '../../domain/entities/resume.js';
 import { jobAvailability, type Job } from '../../domain/job.js';
@@ -50,7 +51,27 @@ export class PrismaJobApplicationsRepository
   findCompanyApplication(companyId: string, jobId: string, id: string) {
     return this.prisma.jobApplication.findFirst({
       where: { id, jobId, job: { companyId } },
-      select: { ...receipt, resumeSnapshot: true },
+      select: { ...receipt, resumeSnapshot: true, status: true },
+    });
+  }
+
+  async changeStatus(
+    companyId: string,
+    jobId: string,
+    id: string,
+    previousStatus: ApplicationStatus,
+    newStatus: ApplicationStatus,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.jobApplication.updateMany({
+        where: { id, jobId, job: { companyId }, status: previousStatus },
+        data: { status: newStatus },
+      });
+      if (!updated.count) return false;
+      await tx.jobApplicationStatusChange.create({
+        data: { applicationId: id, companyId, previousStatus, newStatus },
+      });
+      return true;
     });
   }
 
