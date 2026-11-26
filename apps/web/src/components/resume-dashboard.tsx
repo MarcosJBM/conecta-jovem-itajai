@@ -152,7 +152,13 @@ export function ResumeDashboard({ expired }: { expired: () => void }) {
       ) : (
         <>
           <Card className="gap-3 p-6">
-            <h2 className="text-2xl font-semibold">Meu currículo</h2>
+            <h2
+              id="resume-heading"
+              tabIndex={-1}
+              className="text-2xl font-semibold"
+            >
+              Meu currículo
+            </h2>
             <p>Conte suas habilidades. Formação e experiência são opcionais.</p>
             <p role="status">
               {saved.completeness.complete

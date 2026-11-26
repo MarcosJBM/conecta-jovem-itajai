@@ -1,6 +1,6 @@
-import type { ResumeData } from '../domain/entities/resume.js';
-import type { YouthProfile } from '../domain/entities/user.js';
-import { requiredYouthFields } from '../domain/entities/user.js';
+import type { ResumeData } from './entities/resume.js';
+import type { YouthProfile } from './entities/user.js';
+import { requiredYouthFields } from './entities/user.js';
 
 export function getResumeCompleteness(
   profile: YouthProfile | null,
