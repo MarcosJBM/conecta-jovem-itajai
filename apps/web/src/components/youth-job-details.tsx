@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { api, ApiError } from '../api';
@@ -90,7 +91,7 @@ export function YouthJobDetails({
   }, [id, expired]);
 
   return (
-    <section className="mt-10 space-y-5" aria-labelledby="job-details-heading">
+    <section className="space-y-5" aria-labelledby="job-details-heading">
       <h2
         ref={heading}
         tabIndex={-1}
@@ -179,9 +180,9 @@ export function YouthJobDetails({
                     <AlertDescription>
                       <p>{errors.root.server.message}</p>
                       {errors.root.server.type === 'incomplete' && (
-                        <a className="underline" href="#resume-heading">
+                        <Link className="underline" to="/perfil">
                           Ir para Meu currículo
-                        </a>
+                        </Link>
                       )}
                     </AlertDescription>
                   </Alert>
