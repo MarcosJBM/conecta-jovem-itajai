@@ -4,6 +4,7 @@ import type { AuthUser } from './api';
 import { DataForm } from './components/data-form';
 import { CompanyDashboard } from './components/company-dashboard';
 import { ResumeDashboard } from './components/resume-dashboard';
+import { YouthJobsSearch } from './components/youth-jobs-search';
 import { AdminDashboard } from './components/admin-dashboard';
 import { credentials, companyFields, youthFields } from './forms';
 import { Button } from '@/components/ui/button';
@@ -168,7 +169,10 @@ function App() {
           {user.role === 'COMPANY' ? (
             <CompanyDashboard expired={expired} />
           ) : user.role === 'YOUTH' ? (
-            <ResumeDashboard expired={expired} />
+            <>
+              <ResumeDashboard expired={expired} />
+              <YouthJobsSearch expired={expired} />
+            </>
           ) : (
             <AdminDashboard expired={expired} />
           )}
