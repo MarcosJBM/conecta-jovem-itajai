@@ -1,12 +1,13 @@
 export type Field = {
-  name: string
-  label: string
-  type?: string
-  max?: number
-  optional?: boolean
-  mobileOnly?: boolean
-  autoComplete?: string
-}
+  name: string;
+  label: string;
+  type?: string;
+  max?: number;
+  optional?: boolean;
+  mobileOnly?: boolean;
+  autoComplete?: string;
+};
+
 export const credentials: Field[] = [
   {
     name: 'email',
@@ -21,7 +22,8 @@ export const credentials: Field[] = [
     type: 'password',
     autoComplete: 'new-password',
   },
-]
+];
+
 export const companyFields: Field[] = [
   {
     name: 'legalName',
@@ -41,7 +43,7 @@ export const companyFields: Field[] = [
   },
   { name: 'contactRole', label: 'Cargo ou vínculo', max: 100 },
   { name: 'phone', label: 'Telefone com DDD', type: 'tel', max: 20 },
-]
+];
 export const youthFields: Field[] = [
   { name: 'firstName', label: 'Nome', max: 150, autoComplete: 'given-name' },
   {
@@ -82,4 +84,4 @@ export const youthFields: Field[] = [
   { name: 'neighborhood', label: 'Bairro', max: 100 },
   { name: 'city', label: 'Cidade', max: 100, autoComplete: 'address-level2' },
   { name: 'state', label: 'Estado (UF)' },
-]
+];

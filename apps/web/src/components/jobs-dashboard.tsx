@@ -1,104 +1,104 @@
-import { useEffect, useRef, useState } from 'react'
-import { FormProvider, useForm } from 'react-hook-form'
-import type { Path } from 'react-hook-form'
-import { api, ApiError } from '../api'
-import { states } from '../lib/brazilian-data'
-import { emptyJob, jobValues } from '../lib/job'
-import type { Job, JobOptions, JobValues } from '../lib/job'
-import { FormInput } from './form-input'
-import { FormTextarea } from './form-textarea'
-import { FormSelect } from './form-select'
-import { CloseJobAction } from './close-job-action'
-import { Pagination } from './pagination'
-import { Button } from './ui/button'
-import { Card } from './ui/card'
-import { Alert, AlertDescription } from './ui/alert'
+import { useEffect, useRef, useState } from 'react';
+import { FormProvider, useForm } from 'react-hook-form';
+import type { Path } from 'react-hook-form';
+import { api, ApiError } from '../api';
+import { states } from '../lib/brazilian-data';
+import { emptyJob, jobValues } from '../lib/job';
+import type { Job, JobOptions, JobValues } from '../lib/job';
+import { FormInput } from './form-input';
+import { FormTextarea } from './form-textarea';
+import { FormSelect } from './form-select';
+import { CloseJobAction } from './close-job-action';
+import { Pagination } from './pagination';
+import { Button } from './ui/button';
+import { Card } from './ui/card';
+import { Alert, AlertDescription } from './ui/alert';
 
-type Panel = { mode: 'new' | 'view' | 'edit'; id?: string }
+type Panel = { mode: 'new' | 'view' | 'edit'; id?: string };
 export function JobsDashboard({ expired }: { expired: () => void }) {
-  const form = useForm<JobValues>({ defaultValues: emptyJob })
+  const form = useForm<JobValues>({ defaultValues: emptyJob });
   const {
     reset,
     setError,
     clearErrors,
     formState: { errors, isSubmitting },
-  } = form
+  } = form;
   const [list, setList] = useState<{
-    items: Job[]
-    total: number
-    totalPages: number
-  }>({ items: [], total: 0, totalPages: 0 })
-  const [options, setOptions] = useState<JobOptions | null>(null)
-  const [panel, setPanel] = useState<Panel | null>(null)
-  const [detail, setDetail] = useState<Job | null>(null)
-  const [page, setPage] = useState(1)
-  const [version, setVersion] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [notice, setNotice] = useState('')
-  const lock = useRef(false)
+    items: Job[];
+    total: number;
+    totalPages: number;
+  }>({ items: [], total: 0, totalPages: 0 });
+  const [options, setOptions] = useState<JobOptions | null>(null);
+  const [panel, setPanel] = useState<Panel | null>(null);
+  const [detail, setDetail] = useState<Job | null>(null);
+  const [page, setPage] = useState(1);
+  const [version, setVersion] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState('');
+  const lock = useRef(false);
   useEffect(() => {
-    let active = true
-    setLoading(true)
+    let active = true;
+    setLoading(true);
     Promise.all([
       api(`/companies/me/jobs?page=${page}&pageSize=10`),
       api('/companies/me/jobs/options'),
     ])
       .then(([data, catalog]) => {
         if (active) {
-          setList(data)
-          setOptions({ ...catalog.options, today: catalog.today })
+          setList(data);
+          setOptions({ ...catalog.options, today: catalog.today });
         }
       })
       .catch((error) => {
-        if (!active) return
-        if (error instanceof ApiError && error.status === 401) expired()
+        if (!active) return;
+        if (error instanceof ApiError && error.status === 401) expired();
         else
           setError('root.server', {
             message:
               error instanceof Error
                 ? error.message
                 : 'Falha ao carregar vagas.',
-          })
+          });
       })
       .finally(() => {
-        if (active) setLoading(false)
-      })
+        if (active) setLoading(false);
+      });
     return () => {
-      active = false
-    }
-  }, [page, version, expired, setError])
+      active = false;
+    };
+  }, [page, version, expired, setError]);
   useEffect(() => {
-    let active = true
-    setDetail(null)
-    if (panel?.mode === 'new') reset(emptyJob)
+    let active = true;
+    setDetail(null);
+    if (panel?.mode === 'new') reset(emptyJob);
     else if (panel?.id)
       api(`/companies/me/jobs/${panel.id}`)
         .then((data) => {
           if (active) {
-            setDetail(data.job)
-            reset(jobValues(data.job))
+            setDetail(data.job);
+            reset(jobValues(data.job));
           }
         })
         .catch((error) => {
-          if (!active) return
-          if (error instanceof ApiError && error.status === 401) expired()
+          if (!active) return;
+          if (error instanceof ApiError && error.status === 401) expired();
           else
             setError('root.server', {
               message:
                 error instanceof Error
                   ? error.message
                   : 'Falha ao consultar vaga.',
-            })
-        })
+            });
+        });
     return () => {
-      active = false
-    }
-  }, [panel, reset, setError, expired])
+      active = false;
+    };
+  }, [panel, reset, setError, expired]);
   async function save(values: JobValues) {
-    if (lock.current || !panel) return
-    lock.current = true
-    clearErrors()
-    setNotice('')
+    if (lock.current || !panel) return;
+    lock.current = true;
+    clearErrors();
+    setNotice('');
     try {
       await api(
         panel.mode === 'new'
@@ -106,19 +106,19 @@ export function JobsDashboard({ expired }: { expired: () => void }) {
           : `/companies/me/jobs/${panel.id}`,
         panel.mode === 'new' ? 'POST' : 'PUT',
         values,
-      )
+      );
       setNotice(
         panel.mode === 'new' ? 'Vaga criada e publicada.' : 'Vaga atualizada.',
-      )
-      setPanel(null)
-      setPage(1)
-      setVersion((v) => v + 1)
+      );
+      setPanel(null);
+      setPage(1);
+      setVersion((v) => v + 1);
     } catch (error) {
-      if (error instanceof ApiError && error.status === 401) expired()
+      if (error instanceof ApiError && error.status === 401) expired();
       setError('root.server', {
         message:
           error instanceof Error ? error.message : 'Falha ao salvar vaga.',
-      })
+      });
       if (error instanceof ApiError)
         for (const [name, message] of Object.entries(error.fields))
           if (name in emptyJob)
@@ -126,20 +126,20 @@ export function JobsDashboard({ expired }: { expired: () => void }) {
               name as Path<JobValues>,
               { message },
               { shouldFocus: true },
-            )
+            );
     } finally {
-      lock.current = false
+      lock.current = false;
     }
   }
   const label = (
     items: { value: string; label: string }[] | undefined,
     value: string,
-  ) => items?.find((item) => item.value === value)?.label ?? value
+  ) => items?.find((item) => item.value === value)?.label ?? value;
   const availability = {
     OPEN: 'Aberta',
     EXPIRED: 'Prazo encerrado',
     CLOSED: 'Encerrada',
-  }
+  };
   return (
     <div className="space-y-6">
       <Card className="gap-4 p-6">
@@ -149,9 +149,9 @@ export function JobsDashboard({ expired }: { expired: () => void }) {
           <Button
             disabled={!options || isSubmitting}
             onClick={() => {
-              clearErrors()
-              setNotice('')
-              setPanel({ mode: 'new' })
+              clearErrors();
+              setNotice('');
+              setPanel({ mode: 'new' });
             }}
           >
             Criar vaga
@@ -160,8 +160,8 @@ export function JobsDashboard({ expired }: { expired: () => void }) {
             variant="outline"
             disabled={isSubmitting}
             onClick={() => {
-              clearErrors()
-              setVersion((v) => v + 1)
+              clearErrors();
+              setVersion((v) => v + 1);
             }}
           >
             Atualizar vagas
@@ -207,8 +207,8 @@ export function JobsDashboard({ expired }: { expired: () => void }) {
                   variant="outline"
                   disabled={isSubmitting}
                   onClick={() => {
-                    clearErrors()
-                    setPanel({ mode: 'view', id: job.id })
+                    clearErrors();
+                    setPanel({ mode: 'view', id: job.id });
                   }}
                 >
                   Ver detalhes
@@ -219,8 +219,8 @@ export function JobsDashboard({ expired }: { expired: () => void }) {
                       disabled={isSubmitting}
                       variant="outline"
                       onClick={() => {
-                        clearErrors()
-                        setPanel({ mode: 'edit', id: job.id })
+                        clearErrors();
+                        setPanel({ mode: 'edit', id: job.id });
                       }}
                     >
                       Editar vaga
@@ -229,10 +229,10 @@ export function JobsDashboard({ expired }: { expired: () => void }) {
                       id={job.id}
                       expired={expired}
                       completed={() => {
-                        clearErrors()
-                        setNotice('Vaga encerrada.')
-                        setPanel(null)
-                        setVersion((v) => v + 1)
+                        clearErrors();
+                        setNotice('Vaga encerrada.');
+                        setPanel(null);
+                        setVersion((v) => v + 1);
                       }}
                     />
                   </>
@@ -362,5 +362,5 @@ export function JobsDashboard({ expired }: { expired: () => void }) {
         </Card>
       )}
     </div>
-  )
+  );
 }

@@ -6,8 +6,15 @@ import { env } from '../../env.js';
 const include = {
   resume: { include: { skills: true, educations: true, experiences: true } },
 } as const;
+function loadProfile(
+  prisma: Pick<ReturnType<typeof getDatabaseClient>, 'youthProfile'>,
+  userId: string,
+) {
+  return prisma.youthProfile.findUnique({ where: { userId }, include });
+}
+
 function record(
-  profile: NonNullable<Awaited<ReturnType<PrismaResumesRepository['load']>>>,
+  profile: NonNullable<Awaited<ReturnType<typeof loadProfile>>>,
 ): ResumeRecord {
   const { resume, ...personal } = profile;
   return {
@@ -17,14 +24,19 @@ function record(
       : null,
   };
 }
+export async function findResumeByUser(
+  prisma: Pick<ReturnType<typeof getDatabaseClient>, 'youthProfile'>,
+  userId: string,
+) {
+  const profile = await loadProfile(prisma, userId);
+  return profile ? record(profile) : null;
+}
+
 export class PrismaResumesRepository implements ResumesRepository {
   constructor(private prisma = getDatabaseClient()) {}
-  async load(userId: string) {
-    return this.prisma.youthProfile.findUnique({ where: { userId }, include });
-  }
-  async findByUser(userId: string) {
-    const profile = await this.load(userId);
-    return profile ? record(profile) : null;
+
+  findByUser(userId: string) {
+    return findResumeByUser(this.prisma, userId);
   }
   async save(userId: string, data: ResumeData) {
     return this.prisma.$transaction(async (tx) => {

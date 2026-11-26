@@ -9,7 +9,9 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "db:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",
@@ -19,7 +21,9 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:integration": "pnpm build && node --test tests/*.test.mjs",
-    "test:resume": "pnpm build && node --test tests/isolated/resume.integration.test.mjs"
+    "test:resume": "pnpm build && node --test tests/isolated/resume.integration.test.mjs",
+    "db:seed": "pnpm build && prisma db seed",
+    "test:seed": "pnpm build && node --test tests/seed.test.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
@@ -28,8 +32,11 @@
     "pg": "8.23.1"
   },
   "devDependencies": {
+    "@brazilian-utils/brazilian-utils": "2.5.0",
+    "@faker-js/faker": "10.6.0",
     "@types/node": "26.6.4",
     "@types/pg": "8.23.1",
+    "bcryptjs": "3.0.3",
     "prisma": "7.10.0",
     "typescript": "5.9.3"
   }

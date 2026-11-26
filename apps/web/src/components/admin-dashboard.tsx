@@ -1,135 +1,135 @@
-import { useEffect, useRef, useState } from 'react'
-import { FormProvider, useForm, useWatch } from 'react-hook-form'
-import { api, ApiError } from '../api'
-import { formatBrazilianField } from '../lib/brazilian-data'
-import { FormInput } from './form-input'
-import { FormSelect } from './form-select'
-import { Pagination } from './pagination'
-import { Button } from './ui/button'
-import { Card } from './ui/card'
-import { Alert, AlertDescription } from './ui/alert'
+import { useEffect, useRef, useState } from 'react';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
+import { api, ApiError } from '../api';
+import { formatBrazilianField } from '../lib/brazilian-data';
+import { FormInput } from './form-input';
+import { FormSelect } from './form-select';
+import { Pagination } from './pagination';
+import { Button } from './ui/button';
+import { Card } from './ui/card';
+import { Alert, AlertDescription } from './ui/alert';
 
 type Review = {
-  id: string
-  status: 'PENDING' | 'APPROVED' | 'REJECTED'
-  rejectionReason: string | null
+  id: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  rejectionReason: string | null;
   company: {
-    id: string
-    cnpj: string | null
-    legalName: string | null
-    tradeName: string | null
-    city: string | null
-    state: string | null
-    contactName: string | null
-    contactRole: string | null
-    phone: string | null
-    email: string
-  }
-}
+    id: string;
+    cnpj: string | null;
+    legalName: string | null;
+    tradeName: string | null;
+    city: string | null;
+    state: string | null;
+    contactName: string | null;
+    contactRole: string | null;
+    phone: string | null;
+    email: string;
+  };
+};
 export function AdminDashboard({ expired }: { expired: () => void }) {
-  const form = useForm({ defaultValues: { status: '', reason: '' } })
-  const status = useWatch({ control: form.control, name: 'status' })
+  const form = useForm({ defaultValues: { status: '', reason: '' } });
+  const status = useWatch({ control: form.control, name: 'status' });
   const {
     setError,
     clearErrors,
     reset,
     formState: { errors, isSubmitting },
-  } = form
+  } = form;
   const [list, setList] = useState<{
-    items: Review[]
-    total: number
-    totalPages: number
-  }>({ items: [], total: 0, totalPages: 0 })
-  const [selected, setSelected] = useState<string | null>(null)
-  const [detail, setDetail] = useState<Review | null>(null)
-  const [page, setPage] = useState(1)
-  const [version, setVersion] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [notice, setNotice] = useState('')
-  const lock = useRef(false)
+    items: Review[];
+    total: number;
+    totalPages: number;
+  }>({ items: [], total: 0, totalPages: 0 });
+  const [selected, setSelected] = useState<string | null>(null);
+  const [detail, setDetail] = useState<Review | null>(null);
+  const [page, setPage] = useState(1);
+  const [version, setVersion] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState('');
+  const lock = useRef(false);
   useEffect(() => {
-    let active = true
-    setLoading(true)
+    let active = true;
+    setLoading(true);
     api(`/admin/company-validations?page=${page}&pageSize=10`)
       .then((data) => {
-        if (active) setList(data)
+        if (active) setList(data);
       })
       .catch((error) => {
-        if (!active) return
-        if (error instanceof ApiError && error.status === 401) expired()
+        if (!active) return;
+        if (error instanceof ApiError && error.status === 401) expired();
         else
           setError('root.server', {
             message:
               error instanceof Error
                 ? error.message
                 : 'Falha ao listar solicitações.',
-          })
+          });
       })
       .finally(() => {
-        if (active) setLoading(false)
-      })
+        if (active) setLoading(false);
+      });
     return () => {
-      active = false
-    }
-  }, [page, version, expired, setError])
+      active = false;
+    };
+  }, [page, version, expired, setError]);
   useEffect(() => {
-    let active = true
-    setDetail(null)
-    reset({ status: '', reason: '' })
+    let active = true;
+    setDetail(null);
+    reset({ status: '', reason: '' });
     if (selected)
       api(`/admin/company-validations/${selected}`)
         .then((data) => {
-          if (active) setDetail(data.review)
+          if (active) setDetail(data.review);
         })
         .catch((error) => {
-          if (!active) return
-          if (error instanceof ApiError && error.status === 401) expired()
+          if (!active) return;
+          if (error instanceof ApiError && error.status === 401) expired();
           else
             setError('root.server', {
               message:
                 error instanceof Error
                   ? error.message
                   : 'Falha ao carregar dados.',
-            })
-        })
+            });
+        });
     return () => {
-      active = false
-    }
-  }, [selected, version, expired, reset, setError])
+      active = false;
+    };
+  }, [selected, version, expired, reset, setError]);
   async function decide(values: { status: string; reason: string }) {
-    if (lock.current || !selected) return
-    lock.current = true
-    clearErrors()
-    setNotice('')
+    if (lock.current || !selected) return;
+    lock.current = true;
+    clearErrors();
+    setNotice('');
     try {
       await api(`/admin/company-validations/${selected}/decision`, 'POST', {
         status: values.status,
         ...(values.status === 'REJECTED' ? { reason: values.reason } : {}),
-      })
+      });
       setNotice(
         values.status === 'APPROVED'
           ? 'Empresa aprovada.'
           : 'Empresa rejeitada. O motivo está disponível para a empresa.',
-      )
-      setSelected(null)
-      setPage(1)
-      setVersion((v) => v + 1)
+      );
+      setSelected(null);
+      setPage(1);
+      setVersion((v) => v + 1);
     } catch (error) {
-      if (error instanceof ApiError && error.status === 401) expired()
+      if (error instanceof ApiError && error.status === 401) expired();
       setError('root.server', {
         message:
           error instanceof Error
             ? error.message
             : 'Falha ao registrar decisão.',
-      })
+      });
       if (error instanceof ApiError && error.fields.reason)
         setError(
           'reason',
           { message: error.fields.reason },
           { shouldFocus: true },
-        )
+        );
     } finally {
-      lock.current = false
+      lock.current = false;
     }
   }
   return (
@@ -143,8 +143,8 @@ export function AdminDashboard({ expired }: { expired: () => void }) {
           variant="outline"
           disabled={isSubmitting}
           onClick={() => {
-            clearErrors()
-            setVersion((v) => v + 1)
+            clearErrors();
+            setVersion((v) => v + 1);
           }}
         >
           Atualizar lista
@@ -184,8 +184,8 @@ export function AdminDashboard({ expired }: { expired: () => void }) {
               <Button
                 disabled={isSubmitting}
                 onClick={() => {
-                  clearErrors()
-                  setSelected(review.id)
+                  clearErrors();
+                  setSelected(review.id);
                 }}
               >
                 Analisar {review.company.legalName ?? 'empresa'}
@@ -288,5 +288,5 @@ export function AdminDashboard({ expired }: { expired: () => void }) {
         </Card>
       )}
     </div>
-  )
+  );
 }

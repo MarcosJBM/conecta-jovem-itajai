@@ -32,6 +32,8 @@ export interface Job extends JobData {
   createdAt: Date;
   updatedAt: Date;
 }
+export type PublicJob = Job & { companyName: string };
+
 export const jobOptions = {
   contracts: jobContracts.map((value, index) => ({
     value,
@@ -82,5 +84,31 @@ export function presentJob(job: Job, now = new Date()) {
     ...job,
     deadline: job.deadline.toISOString().slice(0, 10),
     availability: jobAvailability(job, now),
+  };
+}
+
+export function presentPublicJob({
+  id,
+  title,
+  description,
+  city,
+  state,
+  area,
+  contract,
+  regime,
+  companyName,
+  deadline,
+}: PublicJob) {
+  return {
+    id,
+    title,
+    description,
+    city,
+    state,
+    area,
+    contract,
+    regime,
+    companyName,
+    deadline: deadline.toISOString().slice(0, 10),
   };
 }

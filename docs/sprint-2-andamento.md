@@ -56,18 +56,18 @@ As entregas abaixo são implementações em branches separadas e aguardam revis�
 
 Execução final em 21/10/2026:
 
-| Verificação | Resultado |
-| --- | --- |
-| API — testes unitários | 120 aprovados, 14 arquivos |
-| API — E2E com banco isolado | 23 aprovados, 7 arquivos |
-| Frontend — testes de interface | 13 aprovados, 4 arquivos |
-| Migration/persistência do currículo | 7 aprovados (principal e 6 subtestes) |
-| Typecheck e lint da API | Aprovados |
-| Formatação da API e verificação de nomes web | Aprovadas |
-| Builds do banco, API e frontend | Aprovados |
-| Navegador real — fluxo integrado | Aprovado |
-| Telas em 360 e 1440 px | 8 capturas, sem overflow horizontal |
-| Erros de página no navegador | Nenhum |
+| Verificação                                  | Resultado                             |
+| -------------------------------------------- | ------------------------------------- |
+| API — testes unitários                       | 120 aprovados, 14 arquivos            |
+| API — E2E com banco isolado                  | 23 aprovados, 7 arquivos              |
+| Frontend — testes de interface               | 13 aprovados, 4 arquivos              |
+| Migration/persistência do currículo          | 7 aprovados (principal e 6 subtestes) |
+| Typecheck e lint da API                      | Aprovados                             |
+| Formatação da API e verificação de nomes web | Aprovadas                             |
+| Builds do banco, API e frontend              | Aprovados                             |
+| Navegador real — fluxo integrado             | Aprovado                              |
+| Telas em 360 e 1440 px                       | 8 capturas, sem overflow horizontal   |
+| Erros de página no navegador                 | Nenhum                                |
 
 O E2E `sprint-two-flow.test.ts` verifica currículo sem formação/experiência, rejeição, correção/reenvio pela mesma conta, aprovação, publicação direta, edição e encerramento. O mesmo roteiro foi executado na interface com Chromium e dados fictícios; a recarga do navegador confirmou persistência do currículo. Há teste de remoção de campos por teclado na interface. As capturas foram inspecionadas visualmente.
 
@@ -75,12 +75,12 @@ Todos os testes de banco usaram schemas exclusivos do PostgreSQL local, removido
 
 ### Capturas de tela
 
-| Tela | 360 px | 1440 px |
-| --- | --- | --- |
-| Currículo | [Captura](evidencias/sprint-2/curriculo-360.png) | [Captura](evidencias/sprint-2/curriculo-1440.png) |
+| Tela                | 360 px                                                 | 1440 px                                                 |
+| ------------------- | ------------------------------------------------------ | ------------------------------------------------------- |
+| Currículo           | [Captura](evidencias/sprint-2/curriculo-360.png)       | [Captura](evidencias/sprint-2/curriculo-1440.png)       |
 | Análise empresarial | [Captura](evidencias/sprint-2/analise-empresa-360.png) | [Captura](evidencias/sprint-2/analise-empresa-1440.png) |
-| Formulário da vaga | [Captura](evidencias/sprint-2/formulario-vaga-360.png) | [Captura](evidencias/sprint-2/formulario-vaga-1440.png) |
-| Gestão das vagas | [Captura](evidencias/sprint-2/gestao-vagas-360.png) | [Captura](evidencias/sprint-2/gestao-vagas-1440.png) |
+| Formulário da vaga  | [Captura](evidencias/sprint-2/formulario-vaga-360.png) | [Captura](evidencias/sprint-2/formulario-vaga-1440.png) |
+| Gestão das vagas    | [Captura](evidencias/sprint-2/gestao-vagas-360.png)    | [Captura](evidencias/sprint-2/gestao-vagas-1440.png)    |
 
 [Resultado estruturado da verificação visual](evidencias/sprint-2/verificacao-visual.json).
 
@@ -90,12 +90,12 @@ As capturas usam contas e dados de teste. Elas não comprovam publicação, disp
 
 O README apresenta os contratos HTTP atuais e os passos de execução com migrations. O registro de mudanças mantém a comparação com o PDF M1 e acrescenta o avanço de 21/10, preservando a redação histórica das decisões de 20/10. O desenvolvimento e as verificações foram executados em 21/10; os status de revisão não equivalem a integração concluída.
 
-| História / requisito / caso de uso | Regras aplicadas | Issues | Evidência principal |
-| --- | --- | --- | --- |
-| US03 / RF03 / UC03 — perfil profissional e currículo | RN02 refinada: dados cadastrais obrigatórios + habilidade; formação/experiência opcionais | #28, #29, #30 | Modelos/migration, testes de completude e de API, interface de currículo, captura e teste no navegador |
-| US09 / RF09 / UC09 — decisão administrativa | RN08 refinada: pendente/aprovada/rejeitada; motivo na rejeição e reenvio pela mesma conta | #31, #32; integração com #25 | Testes de permissões e decisões concorrentes, fluxo rejeitar/corrigir/aprovar e painel ADMIN |
-| US10 / RF10 / UC10 — gestão das próprias vagas | RN01, RN04, RN06, RN09: aprovação, propriedade, prazo e trabalho formal | #33, #34, #35 | Migration, API, catálogo, teste de virada do prazo, interface e fluxo publicar/editar/encerrar |
-| Qualidade e gerenciamento de mudanças | Rastreabilidade, testes pertinentes e registro real de datas/evidências | #36, #37 | Teste integrado, este relatório, capturas e registro de mudanças |
+| História / requisito / caso de uso                   | Regras aplicadas                                                                          | Issues                       | Evidência principal                                                                                    |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------ |
+| US03 / RF03 / UC03 — perfil profissional e currículo | RN02 refinada: dados cadastrais obrigatórios + habilidade; formação/experiência opcionais | #28, #29, #30                | Modelos/migration, testes de completude e de API, interface de currículo, captura e teste no navegador |
+| US09 / RF09 / UC09 — decisão administrativa          | RN08 refinada: pendente/aprovada/rejeitada; motivo na rejeição e reenvio pela mesma conta | #31, #32; integração com #25 | Testes de permissões e decisões concorrentes, fluxo rejeitar/corrigir/aprovar e painel ADMIN           |
+| US10 / RF10 / UC10 — gestão das próprias vagas       | RN01, RN04, RN06, RN09: aprovação, propriedade, prazo e trabalho formal                   | #33, #34, #35                | Migration, API, catálogo, teste de virada do prazo, interface e fluxo publicar/editar/encerrar         |
+| Qualidade e gerenciamento de mudanças                | Rastreabilidade, testes pertinentes e registro real de datas/evidências                   | #36, #37                     | Teste integrado, este relatório, capturas e registro de mudanças                                       |
 
 ### Atualização posterior à revisão técnica
 
@@ -121,17 +121,17 @@ A primeira PR é a [#38](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/
 
 ### PRs por tarefa
 
-| Issue | PR | Base inicial |
-| --- | --- | --- |
-| [#28](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/28) | [#38](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/38) | `staging` |
-| [#29](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/29) | [#39](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/39) | `codex/28-resume-data-model` |
-| [#30](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/30) | [#40](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/40) | `codex/29-resume-api` |
-| [#31](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/31) | [#41](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/41) | `codex/30-resume-interface` |
-| [#32](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/32) | [#42](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/42) | `codex/31-company-review-api` |
+| Issue                                                              | PR                                                               | Base inicial                        |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------- | ----------------------------------- |
+| [#28](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/28) | [#38](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/38) | `staging`                           |
+| [#29](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/29) | [#39](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/39) | `codex/28-resume-data-model`        |
+| [#30](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/30) | [#40](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/40) | `codex/29-resume-api`               |
+| [#31](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/31) | [#41](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/41) | `codex/30-resume-interface`         |
+| [#32](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/32) | [#42](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/42) | `codex/31-company-review-api`       |
 | [#33](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/33) | [#43](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/43) | `codex/32-company-review-interface` |
-| [#34](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/34) | [#44](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/44) | `codex/33-job-data-model` |
-| [#35](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/35) | [#45](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/45) | `codex/34-job-management-api` |
+| [#34](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/34) | [#44](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/44) | `codex/33-job-data-model`           |
+| [#35](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/35) | [#45](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/45) | `codex/34-job-management-api`       |
 | [#36](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/36) | [#46](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/46) | `codex/35-job-management-interface` |
-| [#37](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/37) | [#47](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/47) | `codex/36-sprint-2-validation` |
+| [#37](https://github.com/MarcosJBM/conecta-jovem-itajai/issues/37) | [#47](https://github.com/MarcosJBM/conecta-jovem-itajai/pull/47) | `codex/36-sprint-2-validation`      |
 
 Todas as issues permanecem abertas enquanto aguardam revisão e integração; as datas do quadro registram execução real em 21/10/2026.

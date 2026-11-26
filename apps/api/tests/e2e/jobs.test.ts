@@ -139,3 +139,109 @@ test('company creates directly, manages only its jobs and cannot reopen expired/
     ).status,
   ).toBe(403);
 });
+
+test('youth searches open jobs using literal keywords, combined filters and pagination', async () => {
+  const app = createApp();
+  const prisma = getDatabaseClient();
+  const company = await account('COMPANY');
+  const youth = await session(app, await account('YOUTH'));
+  const owner = await session(app, company);
+  const data = {
+    companyId: company.companyProfile!.id,
+    title: 'Aprendiz',
+    description: 'Apoio administrativo',
+    requirements: 'Noções de Excel (100%)',
+    city: 'Itajaí',
+    state: 'SC',
+    area: 'ADMINISTRATION',
+    contract: 'APPRENTICESHIP',
+    regime: 'ONSITE',
+    deadline: new Date('2099-12-31'),
+  } as const;
+  await prisma.companyProfile.update({
+    where: { id: data.companyId },
+    data: { tradeName: 'Empresa de teste' },
+  });
+  const open = await prisma.job.create({ data });
+  await prisma.job.createMany({
+    data: [
+      { ...data, status: 'CLOSED' },
+      { ...data, deadline: new Date('2000-01-01') },
+      { ...data, city: 'Blumenau', regime: 'REMOTE' },
+    ],
+  });
+
+  expect((await request(app).get('/jobs')).status).toBe(401);
+  expect((await owner.get('/jobs')).status).toBe(403);
+  expect((await youth.get('/jobs').query({ regime: 'INVALID' })).status).toBe(
+    400,
+  );
+
+  for (const keyword of [' APRENDIZ ', 'administrativo', 'EXCEL', '100%']) {
+    const response = await youth.get('/jobs').query({
+      keyword,
+      city: 'ITAJAÍ',
+      area: 'ADMINISTRATION',
+      contract: 'APPRENTICESHIP',
+      regime: 'ONSITE',
+      page: 1,
+      pageSize: 1,
+    });
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      items: [{ id: open.id, companyName: 'Empresa de teste' }],
+      total: 1,
+      page: 1,
+      totalPages: 1,
+    });
+  }
+  expect((await youth.get('/jobs').query({ keyword: '_' })).body.total).toBe(0);
+  const secondPage = await youth.get('/jobs').query({ page: 2, pageSize: 1 });
+  expect(secondPage.body).toMatchObject({ total: 2, totalPages: 2, page: 2 });
+  expect(secondPage.body.items).toHaveLength(1);
+});
+
+test('youth views job details and availability with only public company information', async () => {
+  const app = createApp();
+  const prisma = getDatabaseClient();
+  const company = await account('COMPANY');
+  const youth = await session(app, await account('YOUTH'));
+  const owner = await session(app, company);
+  const data = {
+    companyId: company.companyProfile!.id,
+    title: 'Aprendiz',
+    description: 'Apoio administrativo',
+    requirements: 'Organização e disponibilidade',
+    city: 'Itajaí',
+    state: 'SC',
+    area: 'ADMINISTRATION',
+    contract: 'APPRENTICESHIP',
+    regime: 'ONSITE',
+    deadline: new Date('2099-12-31'),
+  } as const;
+  const open = await prisma.job.create({ data });
+  const path = `/jobs/${open.id}`;
+  expect((await request(app).get(path)).status).toBe(401);
+  expect((await owner.get(path)).status).toBe(403);
+  expect(
+    (await youth.get('/jobs/00000000-0000-4000-8000-000000000000')).status,
+  ).toBe(404);
+  const { companyId: _companyId, ...details } = data;
+  expect((await youth.get(path)).body.job).toEqual({
+    ...details,
+    id: open.id,
+    companyName: 'Empresa 1',
+    deadline: '2099-12-31',
+    availability: 'OPEN',
+  });
+  await prisma.job.update({
+    where: { id: open.id },
+    data: { deadline: new Date('2000-01-01') },
+  });
+  expect((await youth.get(path)).body.job.availability).toBe('EXPIRED');
+  await prisma.job.update({
+    where: { id: open.id },
+    data: { status: 'CLOSED' },
+  });
+  expect((await youth.get(path)).body.job.availability).toBe('CLOSED');
+});

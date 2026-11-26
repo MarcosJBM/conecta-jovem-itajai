@@ -1,18 +1,18 @@
-import { useFormContext } from 'react-hook-form'
-import { Label } from './ui/label'
-import { NativeSelect, NativeSelectOption } from './ui/native-select'
+import { useFormContext } from 'react-hook-form';
+import { Label } from './ui/label';
+import { NativeSelect, NativeSelectOption } from './ui/native-select';
 
 export function FormSelect({
   name,
   label,
   options,
 }: {
-  name: string
-  label: string
-  options: readonly { value: string; label: string }[]
+  name: string;
+  label: string;
+  options: readonly { value: string; label: string }[];
 }) {
-  const { register, getFieldState, formState } = useFormContext()
-  const error = getFieldState(name, formState).error
+  const { register, getFieldState, formState } = useFormContext();
+  const error = getFieldState(name, formState).error;
   return (
     <div className="min-w-0 space-y-2">
       <Label htmlFor={name}>{label}</Label>
@@ -39,5 +39,5 @@ export function FormSelect({
         </p>
       )}
     </div>
-  )
+  );
 }

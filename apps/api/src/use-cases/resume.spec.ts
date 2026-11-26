@@ -4,7 +4,7 @@ import { toResumeView } from '../domain/entities/resume.js';
 import type { YouthProfile } from '../domain/entities/user.js';
 import { requiredYouthFields } from '../domain/entities/user.js';
 import { userInput } from '../utils/test/user-fixture.js';
-import { getResumeCompleteness } from './get-resume-completeness.js';
+import { getResumeCompleteness } from '../domain/resume-completeness.js';
 import { normalizeResume } from './validate-resume.js';
 import { normalizeYouth } from './validate-youth.js';
 import { ValidationError } from './errors/validation-error.js';

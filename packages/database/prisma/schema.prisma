@@ -31,9 +31,9 @@ model User {
 model YouthProfile {
   firstName    String?
   lastName     String?
-  birthDate    DateTime? @db.Date
+  birthDate    DateTime?        @db.Date
   phone        String?
-  cpf          String?   @unique @db.VarChar(11)
+  cpf          String?          @unique @db.VarChar(11)
   postalCode   String?
   street       String?
   number       String?
@@ -41,12 +41,13 @@ model YouthProfile {
   neighborhood String?
   city         String?
   state        String?
-  id           String    @id @default(uuid()) @db.Uuid
-  userId       String    @unique @map("user_id") @db.Uuid
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String           @id @default(uuid()) @db.Uuid
+  userId       String           @unique @map("user_id") @db.Uuid
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   resume       Resume?
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  applications JobApplication[]
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("youth_profiles")
 }
@@ -188,23 +189,38 @@ enum JobArea {
 }
 
 model Job {
-  id           String         @id @default(uuid()) @db.Uuid
-  companyId    String         @map("company_id") @db.Uuid
-  company      CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  title        String         @db.VarChar(150)
-  description  String         @db.VarChar(5000)
-  requirements String         @db.VarChar(5000)
-  city         String         @db.VarChar(100)
-  state        String         @db.VarChar(2)
+  id           String           @id @default(uuid()) @db.Uuid
+  companyId    String           @map("company_id") @db.Uuid
+  company      CompanyProfile   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  applications JobApplication[]
+  title        String           @db.VarChar(150)
+  description  String           @db.VarChar(5000)
+  requirements String           @db.VarChar(5000)
+  city         String           @db.VarChar(100)
+  state        String           @db.VarChar(2)
   area         JobArea
   contract     JobContract
   regime       WorkRegime
-  deadline     DateTime       @db.Date
-  status       JobStatus      @default(OPEN)
-  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt    DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deadline     DateTime         @db.Date
+  status       JobStatus        @default(OPEN)
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@index([companyId, createdAt, id])
   @@index([status, deadline])
   @@map("jobs")
+}
+
+model JobApplication {
+  id             String       @id @default(uuid()) @db.Uuid
+  jobId          String       @map("job_id") @db.Uuid
+  job            Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  youthProfileId String       @map("youth_profile_id") @db.Uuid
+  youthProfile   YouthProfile @relation(fields: [youthProfileId], references: [id], onDelete: Cascade)
+  submittedAt    DateTime     @default(now()) @map("submitted_at") @db.Timestamptz(3)
+  resumeSnapshot Json         @map("resume_snapshot")
+
+  @@unique([jobId, youthProfileId])
+  @@index([youthProfileId])
+  @@map("job_applications")
 }

@@ -1,14 +1,14 @@
-import { Button } from './ui/button'
+import { Button } from './ui/button';
 export function Pagination({
   page,
   totalPages,
   loading,
   change,
 }: {
-  page: number
-  totalPages: number
-  loading: boolean
-  change: (page: number) => void
+  page: number;
+  totalPages: number;
+  loading: boolean;
+  change: (page: number) => void;
 }) {
   return (
     <nav aria-label="Paginação" className="flex flex-wrap items-center gap-3">
@@ -32,5 +32,5 @@ export function Pagination({
         Próxima
       </Button>
     </nav>
-  )
+  );
 }
