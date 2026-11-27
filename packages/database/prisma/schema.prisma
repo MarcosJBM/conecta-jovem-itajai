@@ -112,17 +112,18 @@ enum CompanyValidationStatus {
 }
 
 model CompanyProfile {
-  jobs        Job[]
+  jobs               Job[]
+  applicationHistory JobApplicationStatusChange[]
   // Nullable only for legacy profiles created before company registration existed.
-  cnpj        String?            @unique @db.VarChar(14)
-  legalName   String?            @map("legal_name") @db.VarChar(200)
-  tradeName   String?            @map("trade_name") @db.VarChar(200)
-  city        String?            @db.VarChar(100)
-  state       String?            @db.VarChar(2)
-  contactName String?            @map("contact_name") @db.VarChar(150)
-  contactRole String?            @map("contact_role") @db.VarChar(100)
-  phone       String?            @db.VarChar(11)
-  validation  CompanyValidation?
+  cnpj               String?                      @unique @db.VarChar(14)
+  legalName          String?                      @map("legal_name") @db.VarChar(200)
+  tradeName          String?                      @map("trade_name") @db.VarChar(200)
+  city               String?                      @db.VarChar(100)
+  state              String?                      @db.VarChar(2)
+  contactName        String?                      @map("contact_name") @db.VarChar(150)
+  contactRole        String?                      @map("contact_role") @db.VarChar(100)
+  phone              String?                      @db.VarChar(11)
+  validation         CompanyValidation?
 
   id        String   @id @default(uuid()) @db.Uuid
   userId    String   @unique @map("user_id") @db.Uuid
@@ -211,16 +212,40 @@ model Job {
   @@map("jobs")
 }
 
+enum JobApplicationStatus {
+  RECEIVED
+  IN_REVIEW
+  APPROVED
+  REJECTED
+}
+
 model JobApplication {
-  id             String       @id @default(uuid()) @db.Uuid
-  jobId          String       @map("job_id") @db.Uuid
-  job            Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  youthProfileId String       @map("youth_profile_id") @db.Uuid
-  youthProfile   YouthProfile @relation(fields: [youthProfileId], references: [id], onDelete: Cascade)
-  submittedAt    DateTime     @default(now()) @map("submitted_at") @db.Timestamptz(3)
-  resumeSnapshot Json         @map("resume_snapshot")
+  id             String                       @id @default(uuid()) @db.Uuid
+  jobId          String                       @map("job_id") @db.Uuid
+  job            Job                          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  youthProfileId String                       @map("youth_profile_id") @db.Uuid
+  youthProfile   YouthProfile                 @relation(fields: [youthProfileId], references: [id], onDelete: Cascade)
+  submittedAt    DateTime                     @default(now()) @map("submitted_at") @db.Timestamptz(3)
+  resumeSnapshot Json                         @map("resume_snapshot")
+  status         JobApplicationStatus         @default(RECEIVED)
+  statusHistory  JobApplicationStatusChange[]
 
   @@unique([jobId, youthProfileId])
   @@index([youthProfileId])
   @@map("job_applications")
+}
+
+model JobApplicationStatusChange {
+  id             String               @id @default(uuid()) @db.Uuid
+  applicationId  String               @map("application_id") @db.Uuid
+  application    JobApplication       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  companyId      String               @map("company_id") @db.Uuid
+  company        CompanyProfile       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  previousStatus JobApplicationStatus @map("previous_status")
+  newStatus      JobApplicationStatus @map("new_status")
+  changedAt      DateTime             @default(now()) @map("changed_at") @db.Timestamptz(3)
+
+  @@index([applicationId, changedAt])
+  @@index([companyId])
+  @@map("job_application_status_changes")
 }

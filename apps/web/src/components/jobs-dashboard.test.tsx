@@ -130,3 +130,79 @@ it('does not offer editing or reopening for expired or closed jobs', async () =>
   expect(screen.queryByRole('button', { name: 'Encerrar vaga' })).toBeNull();
   expect(screen.queryByRole('button', { name: /Reabrir/ })).toBeNull();
 });
+
+it('opens the submitted resume on a closed job and allows only the next status', async () => {
+  const user = userEvent.setup();
+  const path = '/companies/me/jobs/job/applications';
+  const receipt = { id: 'candidate', submittedAt: '2026-11-25T16:00:00Z' };
+  vi.mocked(api).mockImplementation(async (url, method, body) => {
+    if (url.endsWith('/options')) return catalog;
+    if (url.startsWith(`${path}?`))
+      return {
+        items: [{ ...receipt, candidateName: 'Ana Silva' }],
+        totalPages: 1,
+      };
+    if (url === `${path}/candidate`)
+      return {
+        application: {
+          ...receipt,
+          status: 'RECEIVED',
+          nextStatuses: ['IN_REVIEW'],
+          resumeSnapshot: {
+            personalDetails: {
+              firstName: 'Ana',
+              lastName: 'Silva',
+              city: 'Itajaí',
+              state: 'SC',
+              phone: '47999991234',
+            },
+            skills: ['Excel'],
+            educations: [],
+            experiences: [],
+          },
+        },
+      };
+    if (method === 'PATCH') {
+      if ((body as { status: string }).status === 'IN_REVIEW')
+        return { status: 'IN_REVIEW', nextStatuses: ['APPROVED', 'REJECTED'] };
+      return { status: 'APPROVED', nextStatuses: [] };
+    }
+    return {
+      items: [{ ...job, availability: 'CLOSED' }],
+      total: 1,
+      totalPages: 1,
+    };
+  });
+  render(<JobsDashboard expired={vi.fn()} />);
+  await user.click(
+    await screen.findByRole('button', {
+      name: 'Ver candidaturas para Aprendiz',
+    }),
+  );
+  await user.click(
+    await screen.findByRole('button', { name: 'Ver currículo de Ana Silva' }),
+  );
+  expect(await screen.findByText('Excel')).toBeTruthy();
+  expect(screen.queryByRole('option', { name: 'Aprovada' })).toBeNull();
+
+  await user.selectOptions(
+    screen.getByLabelText('Próximo status'),
+    'IN_REVIEW',
+  );
+  await user.click(screen.getByRole('button', { name: 'Atualizar status' }));
+  expect(await screen.findByRole('option', { name: 'Aprovada' })).toBeTruthy();
+  expect(api).toHaveBeenLastCalledWith(`${path}/candidate/status`, 'PATCH', {
+    status: 'IN_REVIEW',
+  });
+
+  await user.selectOptions(screen.getByLabelText('Próximo status'), 'APPROVED');
+  await user.click(screen.getByRole('button', { name: 'Atualizar status' }));
+  expect(await screen.findByText('Aprovada')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Atualizar status' })).toBeNull();
+  await user.click(
+    screen.getByRole('button', { name: 'Voltar às candidaturas' }),
+  );
+  expect(
+    await screen.findByRole('button', { name: 'Ver currículo de Ana Silva' }),
+  ).toBeTruthy();
+});

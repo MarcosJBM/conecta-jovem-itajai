@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '../api';
 import type { ResumeResult } from '../lib/resume';
+import {
+  ApplicationStatusForm,
+  type ApplicationStatusInfo,
+} from './application-status-form';
 import { Pagination } from './pagination';
 import { ResumePreview } from './resume-preview';
 import { Alert, AlertDescription } from './ui/alert';
@@ -9,7 +13,7 @@ import { Card } from './ui/card';
 
 type Candidate = { id: string; candidateName: string; submittedAt: string };
 type CandidatePage = { items: Candidate[]; totalPages: number };
-type Application = {
+type Application = ApplicationStatusInfo & {
   id: string;
   submittedAt: string;
   resumeSnapshot: ResumeResult['resume'];
@@ -99,6 +103,18 @@ export function CompanyApplicants({
                 {dateFormat.format(new Date(detail.submittedAt))}
               </time>
             </p>
+            <ApplicationStatusForm
+              path={`${path}/${detail.id}/status`}
+              current={detail}
+              expired={expired}
+              updated={(status) =>
+                setDetail((current) =>
+                  current?.id === detail.id
+                    ? { ...current, ...status }
+                    : current,
+                )
+              }
+            />
             <ResumePreview
               title="Currículo enviado"
               resume={detail.resumeSnapshot}

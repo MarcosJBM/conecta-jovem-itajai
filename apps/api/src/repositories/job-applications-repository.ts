@@ -1,3 +1,4 @@
+import type { ApplicationStatus } from '../domain/job-application.js';
 import type { Pagination } from '../domain/types/pagination.js';
 
 export interface ApplicationReceipt {
@@ -36,5 +37,12 @@ export interface CompanyApplicationsRepository {
     companyId: string,
     jobId: string,
     id: string,
-  ): Promise<SubmittedResume | null>;
+  ): Promise<(SubmittedResume & { status: ApplicationStatus }) | null>;
+  changeStatus(
+    companyId: string,
+    jobId: string,
+    id: string,
+    previousStatus: ApplicationStatus,
+    newStatus: ApplicationStatus,
+  ): Promise<boolean>;
 }

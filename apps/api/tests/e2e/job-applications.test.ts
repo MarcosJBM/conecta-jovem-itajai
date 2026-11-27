@@ -69,6 +69,7 @@ test('serializes duplicate submissions and preserves the structured resume sent 
     jobId: job.id,
     youthProfileId: candidate.youthProfile!.id,
     resumeSnapshot: resume,
+    status: 'RECEIVED',
   });
   expect(receipt).not.toHaveProperty('resumeSnapshot');
   expect((await saveResume('Comunicação')).status).toBe(200);
