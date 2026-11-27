@@ -12,8 +12,10 @@ import { makeFetchJobsUseCase } from '../../../use-cases/factories/make-fetch-jo
 import { makeUpdateJobUseCase } from '../../../use-cases/factories/make-update-job.js';
 import { makeCloseJobUseCase } from '../../../use-cases/factories/make-close-job.js';
 import { makeFetchJobOptionsUseCase } from '../../../use-cases/factories/make-fetch-job-options.js';
+import { companyApplicationsRoutes } from './company-applications-routes.js';
 export const jobsRoutes = Router();
 jobsRoutes.use(requireSession);
+jobsRoutes.use('/:jobId/applications', companyApplicationsRoutes);
 jobsRoutes.get('/options', async (request, response) =>
   response.json(await makeFetchJobOptionsUseCase().execute(request.auth!)),
 );

@@ -1,3 +1,4 @@
+import { ResumePreview } from './resume-preview';
 import { useEffect, useRef, useState } from 'react';
 import {
   Controller,
@@ -9,7 +10,6 @@ import {
 import type { Path } from 'react-hook-form';
 import { api, ApiError } from '../api';
 import type { Education, Experience, ResumeResult } from '../lib/resume';
-import { formatBrazilianField } from '../lib/brazilian-data';
 import { FormInput } from './form-input';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
@@ -407,45 +407,10 @@ export function ResumeDashboard({ expired }: { expired: () => void }) {
               </fieldset>
             </form>
           </FormProvider>
-          <Card className="gap-3 p-6 break-words">
-            <h3 className="text-xl font-semibold">
-              Visualização do currículo salvo
-            </h3>
-            <p className="font-semibold">
-              {saved.resume.personalDetails.firstName}{' '}
-              {saved.resume.personalDetails.lastName}
-            </p>
-            <p>
-              {saved.resume.personalDetails.city} /{' '}
-              {saved.resume.personalDetails.state}
-            </p>
-            <p>
-              {formatBrazilianField(
-                'phone',
-                saved.resume.personalDetails.phone ?? '',
-              )}
-            </p>
-            <h4 className="font-semibold">Habilidades</h4>
-            <p>
-              {saved.resume.skills.join(' · ') ||
-                'Nenhuma habilidade informada.'}
-            </p>
-            <h4 className="font-semibold">Formação</h4>
-            {saved.resume.educations.map((e, i) => (
-              <p key={i}>
-                {e.course} — {e.institution} · {e.level} · {e.startMonth} a{' '}
-                {e.endMonth ?? 'atual'}
-              </p>
-            ))}
-            <h4 className="font-semibold">Experiência</h4>
-            {saved.resume.experiences.map((e, i) => (
-              <p key={i}>
-                {e.title} — {e.organization} · {e.startMonth} a{' '}
-                {e.endMonth ?? 'atual'}
-                {e.description && ` · ${e.description}`}
-              </p>
-            ))}
-          </Card>
+          <ResumePreview
+            title="Visualização do currículo salvo"
+            resume={saved.resume}
+          />
         </>
       )}
     </div>
