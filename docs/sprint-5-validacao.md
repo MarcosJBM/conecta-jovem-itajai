@@ -22,3 +22,33 @@ A auditoria usou axe-core 4.14.1 no Chrome, em 360 e 1440 px. Foram executadas a
 O teste por teclado mostrou que, ao selecionar **Minhas candidaturas** no menu móvel, o foco caía no corpo da página quando o link era ocultado. Agora o foco passa para a região principal. O painel ganhou o atalho **Pular para o conteúdo**, e Escape fecha o menu móvel e devolve o foco ao botão **Menu**.
 
 Também foram verificados o login com formulário inválido, a associação da mensagem ao campo, o avanço e o retorno da paginação e a abertura do histórico com Enter. Os formulários passaram a anunciar os campos obrigatórios. Os controles compartilhados receberam indicadores de foco com a cor sólida, e cada histórico de status ganhou um rótulo que identifica a vaga.
+
+## TS02 — Tempo de resposta dos fluxos principais
+
+Medição local em macOS arm64, Node.js 24.21.0, frontend Vite, API Express e PostgreSQL 18. Foram usados um schema descartável, quatro contas sintéticas, 22 vagas, currículos estruturados e candidaturas com histórico. O login usou BCrypt com fator 12. A meta do M1 foi aplicada a cada amostra, com limite de 2000 ms.
+
+A primeira rodada mediu 15 execuções sequenciais por operação, da requisição através do proxy Vite até o recebimento e a leitura do JSON. Cada envio e mudança de status usou uma candidatura diferente.
+
+| Operação HTTP | Mediana (ms) | Máximo (ms) |
+| --- | ---: | ---: |
+| Login | 207 | 215 |
+| Pesquisa de vagas | 7 | 10 |
+| Envio de candidatura | 8 | 13 |
+| Consulta de candidatos | 5 | 8 |
+| Consulta do currículo enviado | 4 | 5 |
+| Atualização de status | 5 | 9 |
+| Consulta do histórico e notificações | 7 | 9 |
+
+A segunda rodada mediu três execuções por operação no Chrome, a 1440 × 900 px. O cronômetro começou no acionamento do controle e parou quando o resultado ficou visível. A abertura do histórico inclui navegar para **Minhas candidaturas** e expandir o evento da vaga recém-atualizada.
+
+| Operação no Chrome | Mediana (ms) | Máximo (ms) |
+| --- | ---: | ---: |
+| Login | 309 | 312 |
+| Pesquisa de vagas | 47 | 49 |
+| Envio de candidatura | 123 | 124 |
+| Consulta de candidatos | 45 | 117 |
+| Consulta do currículo enviado | 49 | 50 |
+| Atualização de status | 50 | 51 |
+| Abertura do histórico | 95 | 189 |
+
+Todas as amostras ficaram abaixo do limite. Nenhuma operação exigiu ajuste de desempenho neste cenário. A validação cobre execução local sequencial com dados sintéticos. O teste de carga fica na Sprint 6.
