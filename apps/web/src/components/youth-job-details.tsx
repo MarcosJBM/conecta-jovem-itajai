@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { api, ApiError } from '../api';
@@ -90,12 +91,12 @@ export function YouthJobDetails({
   }, [id, expired]);
 
   return (
-    <section className="mt-10 space-y-5" aria-labelledby="job-details-heading">
+    <section className="space-y-5" aria-labelledby="job-details-heading">
       <h2
         ref={heading}
         tabIndex={-1}
         id="job-details-heading"
-        className="text-2xl font-bold"
+        className="text-2xl font-bold wrap-anywhere"
       >
         {job?.title ?? 'Detalhes da vaga'}
       </h2>
@@ -114,7 +115,7 @@ export function YouthJobDetails({
       )}
       {!job && !error && <p role="status">Carregando vaga…</p>}
       {job && (
-        <Card className="gap-4 p-5">
+        <Card className="min-w-0 gap-4 p-5 wrap-anywhere">
           <p className="font-medium">{availabilityLabels[job.availability]}</p>
           <dl className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -179,9 +180,9 @@ export function YouthJobDetails({
                     <AlertDescription>
                       <p>{errors.root.server.message}</p>
                       {errors.root.server.type === 'incomplete' && (
-                        <a className="underline" href="#resume-heading">
+                        <Link className="underline" to="/perfil">
                           Ir para Meu currículo
-                        </a>
+                        </Link>
                       )}
                     </AlertDescription>
                   </Alert>

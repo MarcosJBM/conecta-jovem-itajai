@@ -34,6 +34,7 @@ export function FormInput({
         type={type}
         disabled={disabled}
         min={minDate}
+        aria-required={required && !disabled}
         aria-invalid={!!error}
         aria-describedby={error ? `${name}-error` : undefined}
         {...register(name, {

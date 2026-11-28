@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -57,11 +58,15 @@ it('opens details from filtered results, sends the saved resume and restores the
     .mockResolvedValueOnce({ application })
     .mockResolvedValueOnce({ ...details, application });
 
-  render(<YouthJobsSearch expired={vi.fn()} />);
+  render(
+    <MemoryRouter initialEntries={['/vagas']}>
+      <YouthJobsSearch expired={vi.fn()} />
+    </MemoryRouter>,
+  );
   const keyword = screen.getByRole('searchbox', { name: 'Palavra-chave' });
   await user.type(keyword, 'equipe');
   await user.click(screen.getByRole('button', { name: 'Buscar vagas' }));
-  const trigger = await screen.findByRole('button', {
+  const trigger = await screen.findByRole('link', {
     name: 'Ver detalhes de Aprendiz',
   });
   expect(api).toHaveBeenLastCalledWith(
@@ -96,9 +101,13 @@ it('shows when a vacancy closes before the youth opens its details', async () =>
       job: { ...details.job, availability: 'CLOSED' },
     });
 
-  render(<YouthJobsSearch expired={vi.fn()} />);
+  render(
+    <MemoryRouter initialEntries={['/vagas']}>
+      <YouthJobsSearch expired={vi.fn()} />
+    </MemoryRouter>,
+  );
   await user.click(
-    await screen.findByRole('button', { name: 'Ver detalhes de Aprendiz' }),
+    await screen.findByRole('link', { name: 'Ver detalhes de Aprendiz' }),
   );
   expect(await screen.findByText('Vaga encerrada')).toBeTruthy();
   expect(

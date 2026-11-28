@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import {
+  Link,
+  useLocation,
+  useMatch,
+  useNavigate,
+  useSearchParams,
+} from 'react-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { api, ApiError } from '../api';
 import type { JobOptions, PublicJobSummary } from '../lib/job';
@@ -19,6 +26,23 @@ const emptyFilters = {
   regime: '',
 };
 type Filters = typeof emptyFilters;
+const filterNames = Object.keys(emptyFilters) as (keyof Filters)[];
+
+function readFilters(params: URLSearchParams): Filters {
+  const filters = { ...emptyFilters };
+  for (const name of filterNames) filters[name] = params.get(name) ?? '';
+  return filters;
+}
+
+function searchQuery(page: number, filters: Filters) {
+  const params = new URLSearchParams();
+  if (page > 1) params.set('page', String(page));
+  for (const name of filterNames) {
+    const value = filters[name]?.trim();
+    if (value) params.set(name, value);
+  }
+  return params;
+}
 type SearchResult = {
   items: PublicJobSummary[];
   options: Omit<JobOptions, 'today'>;
@@ -27,6 +51,17 @@ type SearchResult = {
 };
 
 export function YouthJobsSearch({ expired }: { expired: () => void }) {
+  const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const selectedJob = useMatch('/vagas/:jobId')?.params.jobId;
+  const filters = useMemo(() => readFilters(params), [params]);
+  const inputPage = Number(params.get('page'));
+  const page = Number.isSafeInteger(inputPage) && inputPage > 0 ? inputPage : 1;
+  const query = new URLSearchParams({ page: String(page), pageSize: '10' });
+  searchQuery(1, filters).forEach((value, name) => query.set(name, value));
+  const requestUrl = `/jobs?${query}`;
+
   const {
     register,
     reset,
@@ -34,24 +69,29 @@ export function YouthJobsSearch({ expired }: { expired: () => void }) {
     setError,
     clearErrors,
     formState: { errors },
-  } = useForm<Filters>({ defaultValues: emptyFilters });
-  const [search, setSearch] = useState({ page: 1, filters: emptyFilters });
+  } = useForm<Filters>({ defaultValues: filters });
   const [result, setResult] = useState<SearchResult | null>(null);
-  const [selectedJob, setSelectedJob] = useState<string | null>(null);
-  const detailsTrigger = useRef<HTMLButtonElement>(null);
-  const [loadedSearch, setLoadedSearch] = useState<typeof search | null>(null);
+  const detailsTrigger = useRef<HTMLAnchorElement>(null);
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
+
+  function updateSearch(next: URLSearchParams) {
+    if (next.toString() === params.toString()) {
+      setLoadedUrl(null);
+      setRetry((count) => count + 1);
+    } else {
+      setParams(next);
+    }
+  }
+
+  useEffect(() => {
+    reset(filters);
+  }, [filters, reset]);
 
   useEffect(() => {
     let active = true;
     clearErrors('root.server');
-    const query = new URLSearchParams({
-      page: String(search.page),
-      pageSize: '10',
-    });
-    for (const [key, value] of Object.entries(search.filters)) {
-      if (value?.trim()) query.set(key, value.trim());
-    }
-    api(`/jobs?${query}`)
+    api(requestUrl)
       .then((data: SearchResult) => {
         if (active) setResult(data);
       })
@@ -67,12 +107,12 @@ export function YouthJobsSearch({ expired }: { expired: () => void }) {
           });
       })
       .finally(() => {
-        if (active) setLoadedSearch(search);
+        if (active) setLoadedUrl(requestUrl);
       });
     return () => {
       active = false;
     };
-  }, [clearErrors, expired, search, setError]);
+  }, [clearErrors, expired, requestUrl, retry, setError]);
 
   useEffect(() => {
     if (!selectedJob) detailsTrigger.current?.focus();
@@ -91,7 +131,7 @@ export function YouthJobsSearch({ expired }: { expired: () => void }) {
       options: result?.options.regimes,
     },
   ] as const;
-  const loading = loadedSearch !== search;
+  const loading = loadedUrl !== requestUrl;
   const labels = new Map(
     selectFields.flatMap(({ options }) =>
       (options ?? []).map(({ value, label }) => [value, label] as const),
@@ -106,12 +146,19 @@ export function YouthJobsSearch({ expired }: { expired: () => void }) {
           id={selectedJob}
           labels={labels}
           expired={expired}
-          back={() => setSelectedJob(null)}
+          back={() => {
+            if (location.state?.fromSearch) void navigate(-1);
+            else
+              void navigate(
+                { pathname: '/vagas', search: location.search },
+                { replace: true },
+              );
+          }}
         />
       )}
       <section
         hidden={Boolean(selectedJob)}
-        className="mt-10 space-y-5"
+        className="space-y-5"
         aria-labelledby="jobs-heading"
       >
         <h2 id="jobs-heading" className="text-2xl font-bold">
@@ -121,7 +168,7 @@ export function YouthJobsSearch({ expired }: { expired: () => void }) {
           <form
             className="grid gap-4 sm:grid-cols-2"
             onSubmit={handleSubmit((filters) =>
-              setSearch({ page: 1, filters }),
+              updateSearch(searchQuery(1, filters)),
             )}
           >
             <div className="space-y-2">
@@ -160,8 +207,8 @@ export function YouthJobsSearch({ expired }: { expired: () => void }) {
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  reset();
-                  setSearch({ page: 1, filters: emptyFilters });
+                  reset(emptyFilters);
+                  updateSearch(new URLSearchParams());
                 }}
               >
                 Limpar filtros
@@ -183,7 +230,7 @@ export function YouthJobsSearch({ expired }: { expired: () => void }) {
                 : `${result.total} vagas encontradas`}
             </p>
             {result.items.map((job) => (
-              <Card key={job.id} className="space-y-2 p-5">
+              <Card key={job.id} className="min-w-0 space-y-2 p-5 wrap-anywhere">
                 <h3 className="text-lg font-semibold">{job.title}</h3>
                 <p>
                   {job.companyName} · {job.city}/{job.state}
@@ -200,26 +247,29 @@ export function YouthJobsSearch({ expired }: { expired: () => void }) {
                   </time>
                 </p>
                 <p className="line-clamp-3">{job.description}</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="self-start"
-                  aria-label={`Ver detalhes de ${job.title}`}
-                  onClick={(event) => {
-                    detailsTrigger.current = event.currentTarget;
-                    setSelectedJob(job.id);
-                  }}
-                >
-                  Ver detalhes
+                <Button asChild variant="outline" className="self-start">
+                  <Link
+                    to={{
+                      pathname: `/vagas/${job.id}`,
+                      search: location.search,
+                    }}
+                    state={{ fromSearch: true }}
+                    aria-label={`Ver detalhes de ${job.title}`}
+                    onClick={(event) => {
+                      detailsTrigger.current = event.currentTarget;
+                    }}
+                  >
+                    Ver detalhes
+                  </Link>
                 </Button>
               </Card>
             ))}
-            {(result.totalPages > 1 || search.page > 1) && (
+            {(result.totalPages > 1 || page > 1) && (
               <Pagination
-                page={search.page}
-                totalPages={Math.max(search.page, result.totalPages)}
+                page={page}
+                totalPages={Math.max(page, result.totalPages)}
                 loading={loading}
-                change={(page) => setSearch({ ...search, page })}
+                change={(nextPage) => setParams(searchQuery(nextPage, filters))}
               />
             )}
           </>

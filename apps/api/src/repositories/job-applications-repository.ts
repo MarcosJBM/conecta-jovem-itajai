@@ -1,3 +1,6 @@
+import type { ApplicationStatus } from '../domain/job-application.js';
+import type { Pagination } from '../domain/types/pagination.js';
+
 export interface ApplicationReceipt {
   id: string;
   submittedAt: Date;
@@ -20,4 +23,26 @@ export interface JobApplicationsRepository {
     userId: string,
     clock: () => Date,
   ): Promise<SubmitApplicationResult>;
+}
+
+type SubmittedResume = ApplicationReceipt & { resumeSnapshot: unknown };
+
+export interface CompanyApplicationsRepository {
+  findCompanyApplications(
+    companyId: string,
+    jobId: string,
+    pagination: Pagination,
+  ): Promise<{ items: SubmittedResume[]; total: number }>;
+  findCompanyApplication(
+    companyId: string,
+    jobId: string,
+    id: string,
+  ): Promise<(SubmittedResume & { status: ApplicationStatus }) | null>;
+  changeStatus(
+    companyId: string,
+    jobId: string,
+    id: string,
+    previousStatus: ApplicationStatus,
+    newStatus: ApplicationStatus,
+  ): Promise<boolean>;
 }
