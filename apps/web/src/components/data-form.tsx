@@ -208,6 +208,7 @@ export function DataForm({
                           {...input}
                           id={field.name}
                           className="h-11"
+                          aria-required={!field.optional}
                           aria-invalid={!!fieldState.error}
                           aria-describedby={
                             fieldState.error ? `${field.name}-error` : undefined
@@ -244,6 +245,7 @@ export function DataForm({
                           onChange={(event) =>
                             change(event, field.name, input.onChange)
                           }
+                          aria-required={!field.optional}
                           aria-invalid={!!fieldState.error}
                           aria-describedby={
                             fieldState.error
@@ -308,6 +310,7 @@ export function DataForm({
                           }
                           onBlur={field.onBlur}
                           disabled={isSubmitting}
+                          aria-required
                           aria-invalid={!!fieldState.error}
                           aria-describedby={
                             fieldState.error ? 'terms-error' : undefined

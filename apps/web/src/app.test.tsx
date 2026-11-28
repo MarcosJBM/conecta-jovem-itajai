@@ -79,6 +79,7 @@ it('protects Vagas and sends the young user to Perfil after login', async () => 
     screen.getByRole('link', { name: 'Vagas' }).getAttribute('aria-current'),
   ).toBe('page');
   expect(menu.getAttribute('aria-expanded')).toBe('false');
+  expect(document.activeElement).toBe(screen.getByRole('main'));
   expect(screen.queryByRole('heading', { name: 'Meu currículo' })).toBeNull();
 
   await user.click(screen.getByRole('button', { name: 'Sair' }));

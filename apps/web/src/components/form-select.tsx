@@ -19,6 +19,7 @@ export function FormSelect({
       <NativeSelect
         id={name}
         {...register(name, { required: 'Selecione uma opção.' })}
+        aria-required
         aria-invalid={!!error}
         aria-describedby={error ? `${name}-error` : undefined}
       >
