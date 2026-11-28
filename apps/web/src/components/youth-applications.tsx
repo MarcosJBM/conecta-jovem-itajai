@@ -120,7 +120,10 @@ export function YouthApplications({ expired }: { expired: () => void }) {
                     Enviada em <EventTime value={application.submittedAt} />
                   </p>
                   <details className="space-y-3">
-                    <summary className="cursor-pointer font-medium">
+                    <summary
+                      className="cursor-pointer font-medium"
+                      aria-label={`Histórico de status de ${application.jobTitle}`}
+                    >
                       Histórico de status
                     </summary>
                     {application.statusHistory.length ? (

@@ -18,6 +18,7 @@ export function FormTextarea({
       <Textarea
         id={name}
         rows={5}
+        aria-required
         aria-invalid={!!error}
         aria-describedby={error ? `${name}-error` : undefined}
         {...register(name, {

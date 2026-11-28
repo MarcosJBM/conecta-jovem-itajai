@@ -14,3 +14,11 @@ Ambiente local com Chrome 158.0.8127.37 (headless), macOS, frontend Vite, API Ex
 O teste comparou a largura do documento com a área útil da janela e verificou os limites horizontais dos controles visíveis. Com os dados sintéticos de nomes longos, houve 22 ocorrências de estouro entre o mural, os detalhes da vaga e a análise administrativa. Em 360 px, um título sem espaços acrescentou até 1208 px à largura da página. O botão de análise também excedia a largura disponível.
 
 Após permitir a quebra dos títulos e do texto do botão, os 96 cenários (12 por largura) passaram sem estouro horizontal ou controles fora da área útil.
+
+## TS06 — Acessibilidade dos fluxos essenciais
+
+A auditoria usou axe-core 4.14.1 no Chrome, em 360 e 1440 px. Foram executadas as regras automatizadas com rótulos WCAG 2.0 A/AA, 2.1 A/AA e 2.2 AA nos cenários da tabela acima. A verificação final cobriu 24 combinações de tela e largura e não encontrou violações nas regras executadas.
+
+O teste por teclado mostrou que, ao selecionar **Minhas candidaturas** no menu móvel, o foco caía no corpo da página quando o link era ocultado. Agora o foco passa para a região principal. O painel ganhou o atalho **Pular para o conteúdo**, e Escape fecha o menu móvel e devolve o foco ao botão **Menu**.
+
+Também foram verificados o login com formulário inválido, a associação da mensagem ao campo, o avanço e o retorno da paginação e a abertura do histórico com Enter. Os formulários passaram a anunciar os campos obrigatórios. Os controles compartilhados receberam indicadores de foco com a cor sólida, e cada histórico de status ganhou um rótulo que identifica a vaga.
