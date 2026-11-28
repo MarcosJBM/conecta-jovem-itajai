@@ -230,7 +230,7 @@ export function YouthJobsSearch({ expired }: { expired: () => void }) {
                 : `${result.total} vagas encontradas`}
             </p>
             {result.items.map((job) => (
-              <Card key={job.id} className="space-y-2 p-5">
+              <Card key={job.id} className="min-w-0 space-y-2 p-5 wrap-anywhere">
                 <h3 className="text-lg font-semibold">{job.title}</h3>
                 <p>
                   {job.companyName} · {job.city}/{job.state}

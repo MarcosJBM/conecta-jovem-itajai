@@ -182,6 +182,7 @@ export function AdminDashboard({ expired }: { expired: () => void }) {
                 <p>{formatBrazilianField('cnpj', review.company.cnpj ?? '')}</p>
               </div>
               <Button
+                className="h-auto min-h-9 max-w-full text-left whitespace-normal wrap-anywhere"
                 disabled={isSubmitting}
                 onClick={() => {
                   clearErrors();

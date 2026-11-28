@@ -96,7 +96,7 @@ export function YouthJobDetails({
         ref={heading}
         tabIndex={-1}
         id="job-details-heading"
-        className="text-2xl font-bold"
+        className="text-2xl font-bold wrap-anywhere"
       >
         {job?.title ?? 'Detalhes da vaga'}
       </h2>
@@ -115,7 +115,7 @@ export function YouthJobDetails({
       )}
       {!job && !error && <p role="status">Carregando vaga…</p>}
       {job && (
-        <Card className="gap-4 p-5">
+        <Card className="min-w-0 gap-4 p-5 wrap-anywhere">
           <p className="font-medium">{availabilityLabels[job.availability]}</p>
           <dl className="grid gap-4 sm:grid-cols-2">
             <div>
