@@ -1,3 +1,4 @@
+import { YouthApplications } from './components/youth-applications';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, Route, Routes, useNavigate } from 'react-router';
 import { YouthLayout } from './components/youth-layout';
@@ -116,6 +117,10 @@ function App() {
           <Route
             path="/perfil"
             element={<ResumeDashboard expired={expired} />}
+          />
+          <Route
+            path="/candidaturas"
+            element={<YouthApplications expired={expired} />}
           />
           <Route path="/vagas" element={<YouthJobsSearch expired={expired} />}>
             <Route path=":jobId" element={null} />

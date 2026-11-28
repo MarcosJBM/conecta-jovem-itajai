@@ -186,3 +186,52 @@ test.each(['APPROVED', 'REJECTED'] as const)(
     );
   },
 );
+
+test('youth sees only their own applications and notifications after a company changes status', async () => {
+  const { app, youth, owner, detail, receipt } = await setup();
+  const path = '/applications/me';
+  expect((await request(app).get(path)).status).toBe(401);
+  expect((await owner.get(path)).status).toBe(403);
+  expect((await youth.get(path)).body).toMatchObject({
+    items: [{ id: receipt.id, status: 'RECEIVED', statusHistory: [] }],
+    notifications: [],
+  });
+  const update = await owner
+    .patch(`${detail}/status`)
+    .set('X-Requested-With', 'Conecta')
+    .send({ status: 'IN_REVIEW' });
+  expect(update.status).toBe(200);
+  const result = await youth.get(path);
+  expect(result.status).toBe(200);
+  expect(result.body.items[0]).not.toHaveProperty('resumeSnapshot');
+  expect(result.body).toMatchObject({
+    total: 1,
+    items: [
+      {
+        id: receipt.id,
+        jobTitle: 'Aprendiz',
+        companyName: 'Empresa 1',
+        status: 'IN_REVIEW',
+        statusHistory: [{ previousStatus: 'RECEIVED', newStatus: 'IN_REVIEW' }],
+      },
+    ],
+    notifications: [
+      {
+        jobTitle: 'Aprendiz',
+        previousStatus: 'RECEIVED',
+        newStatus: 'IN_REVIEW',
+      },
+    ],
+  });
+  const anotherPage = await youth.get(path).query({ page: 2, pageSize: 1 });
+  expect(anotherPage.body).toMatchObject({
+    items: [],
+    notifications: result.body.notifications,
+  });
+  const other = await session(app, await account('YOUTH', 2));
+  expect((await other.get(path)).body).toMatchObject({
+    items: [],
+    notifications: [],
+    total: 0,
+  });
+});

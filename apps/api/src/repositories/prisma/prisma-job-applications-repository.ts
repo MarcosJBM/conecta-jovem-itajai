@@ -26,6 +26,62 @@ export class PrismaJobApplicationsRepository
     });
   }
 
+  async findYouthApplications(userId: string, { page, pageSize }: Pagination) {
+    const where = { youthProfile: { userId } };
+    const event = {
+      id: true,
+      changedAt: true,
+      previousStatus: true,
+      newStatus: true,
+    } as const;
+    const orderBy = [{ changedAt: 'desc' }, { id: 'asc' }] as const;
+    const [items, total, notifications] = await this.prisma.$transaction(
+      [
+        this.prisma.jobApplication.findMany({
+          where,
+          select: {
+            ...receipt,
+            status: true,
+            job: {
+              select: {
+                title: true,
+                company: { select: { tradeName: true, legalName: true } },
+              },
+            },
+            statusHistory: { select: event, orderBy: [...orderBy] },
+          },
+          orderBy: [{ submittedAt: 'desc' }, { id: 'asc' }],
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+        this.prisma.jobApplication.count({ where }),
+        this.prisma.jobApplicationStatusChange.findMany({
+          where: { application: where },
+          select: {
+            ...event,
+            application: { select: { job: { select: { title: true } } } },
+          },
+          orderBy: [...orderBy],
+          take: 10,
+        }),
+      ],
+      { isolationLevel: 'RepeatableRead' },
+    );
+    return {
+      items: items.map(({ job, ...application }) => ({
+        ...application,
+        jobTitle: job.title,
+        companyName:
+          job.company.tradeName || job.company.legalName || 'Empresa',
+      })),
+      total,
+      notifications: notifications.map(({ application, ...event }) => ({
+        ...event,
+        jobTitle: application.job.title,
+      })),
+    };
+  }
+
   async findCompanyApplications(
     companyId: string,
     jobId: string,

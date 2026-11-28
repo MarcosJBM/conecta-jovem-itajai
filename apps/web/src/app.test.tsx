@@ -141,3 +141,46 @@ it('restores the URL, page and filters on browser Back from details', async () =
     '/vagas?page=2&keyword=equipe',
   );
 });
+
+it('opens the youth applications with a notification and the status history', async () => {
+  const user = userEvent.setup();
+  const event = {
+    id: 'event-id',
+    changedAt: '2026-11-27T14:00:00Z',
+    previousStatus: 'RECEIVED',
+    newStatus: 'IN_REVIEW',
+  };
+  vi.mocked(api)
+    .mockResolvedValueOnce({
+      user: { id: 'youth-id', role: 'YOUTH', email: 'jovem@example.com' },
+    })
+    .mockResolvedValueOnce({
+      page: 1,
+      totalPages: 1,
+      items: [
+        {
+          id: 'application-id',
+          jobTitle: 'Aprendiz',
+          companyName: 'Empresa local',
+          status: 'IN_REVIEW',
+          submittedAt: '2026-11-27T13:00:00Z',
+          statusHistory: [event],
+        },
+      ],
+      notifications: [{ ...event, jobTitle: 'Aprendiz' }],
+    });
+  render(
+    <MemoryRouter initialEntries={['/perfil']}>
+      <App />
+    </MemoryRouter>,
+  );
+  await user.click(
+    await screen.findByRole('link', { name: 'Minhas candidaturas' }),
+  );
+  expect(await screen.findByText('Aprendiz · Em análise')).toBeTruthy();
+  expect(screen.getByText('Empresa local · Em análise')).toBeTruthy();
+  const summary = screen.getByText('Histórico de status');
+  await user.click(summary);
+  expect(summary.parentElement?.hasAttribute('open')).toBe(true);
+  expect(screen.getByText('De Recebida para Em análise')).toBeTruthy();
+});
