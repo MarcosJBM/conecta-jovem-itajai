@@ -1,13 +1,20 @@
 import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, NavLink, Outlet } from 'react-router';
-import { Briefcase, LogOut, Menu, UserRound } from 'lucide-react';
+import {
+  Briefcase,
+  ClipboardList,
+  LogOut,
+  Menu,
+  UserRound,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 
 const links = [
   { to: '/perfil', label: 'Perfil', icon: UserRound },
   { to: '/vagas', label: 'Vagas', icon: Briefcase },
+  { to: '/candidaturas', label: 'Minhas candidaturas', icon: ClipboardList },
 ];
 
 export function YouthLayout({
