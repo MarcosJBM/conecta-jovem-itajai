@@ -70,7 +70,7 @@ export function CompanyApplicants({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2
           id="company-applicants-heading"
-          className="text-xl font-semibold break-words"
+          className="min-w-0 text-xl font-semibold wrap-anywhere"
         >
           Candidaturas para {job.title}
         </h2>
